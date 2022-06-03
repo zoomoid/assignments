@@ -38,10 +38,9 @@
 
 \usetikzlibrary{arrows,calc}
 
-\select@language{english}
-% TRANSLATIONS
 \DeclareLanguage{english}
 \DeclareLanguage{german}
+\select@language{english}
 
 \ProvideTranslation{german}{prefixAuthor}{Eingereicht von}
 \ProvideTranslation{english}{prefixAuthor}{Handed in by}
@@ -85,114 +84,122 @@
 \newtotcounter{totalpoints}
 \newcounter{task}
 
+\edef\exerciseLabelGradingTable{}
+\edef\gradingTableExercisePoints{}
+
+\edef\PTableA{}
+\edef\PTableB{}
+\edef\PTHead{}
+
 \newcommand{\addPT}[2]{
-\edef\tempA{\GetTranslation{exerciseAbbrev} #1 &}
-\edef\tempB{\qquad / $#2$ &}
-\expandafter\gappto\expandafter\PTableA\expandafter{\tempA}
-\expandafter\gappto\expandafter\PTableB\expandafter{\tempB}
-\expandafter\gappto\expandafter\PTHead\expandafter{c | }
+  \edef\gradingTableExerciseLabel{\GetTranslation{exerciseAbbrev} #1 &}
+  \edef\gradingTableExercisePoints{\qquad / $#2$ &}
+  \xappto\PTableA{\gradingTableExerciseLabel}
+  \xappto\PTableB{\gradingTableExercisePoints}
+  \xappto\PTHead{c | }
 }
 
-\newcommand{\gradingtable}{
-{\Large\bfseries Grading Table}
-\begin{table}[h!]
-\ifcsname PTableASaved\endcsname
-\renewcommand\arraystretch{2}
-\begin{tabular}{\PTHeadSaved c}
-\PTableASaved {\Large$\Sigma$}\\ \hline
-\PTableBSaved \qquad / $\totalpointsSaved$
-\end{tabular}
-\renewcommand{\arraystretch}{1}
-\else
-\texttt{Compile again}\ClassWarning{Compile again to proper display grading table}
-\fi
-\end{table}
+\newcommand{\gradingtable}{%
+  \ifdef{\PTHeadSaved}{%
+    {\Large\bfseries Grading Table}\\%
+    \begin{table}[h!]
+      \renewcommand\arraystretch{2}%
+      \begin{tabular}{\expandonce{\PTHeadSaved} c}
+        \PTableASaved {\Large$\Sigma$}\\ \hline
+        \PTableBSaved \qquad / $\totalpointsSaved$
+      \end{tabular}
+      \renewcommand{\arraystretch}{1}%
+    \end{table}
+  }{\texttt{Compile again}\ClassWarning{Compile again to properly display grading table}}%
 }
 
 \newcommand{\@pointsPerExercise}[1]{
-\ifstrempty{#1}{}{{\quad\large\bfseries/#1 \GetTranslation{points}}}
+  \ifstrempty{#1}{}{{\quad\large\bfseries/#1 \GetTranslation{points}}}
 }
 
 % TASK
 \newcommand\exercise[2][]{%
-\penalty150%
-\ifstrempty{#1}{\def\points{0}}{\def\points{#1}}%
-\stepcounter{exercisenumber}%
-\setcounter{subexercisenumber}{0}%
-\par%
-\vspace{1.5\baselineskip}%
-{%
-{\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
-\@exerciseLabel{#2}%
-\@exerciseRules%
-\notblank{#1}{\@pointsPerExercise{#1}}{}%
-}%
-\par%
-\addtocounter{totalpoints}{\points}%
-\addPT{\arabic{exercisenumber}}{\points}%
+  \penalty150%
+  \ifblank{#1}{\def\points{0}}{\def\points{#1}}%
+  \stepcounter{exercisenumber}%
+  \setcounter{subexercisenumber}{0}%
+  \par%
+  \vspace{1.5\baselineskip}%
+  {%
+    {\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
+    \@exerciseLabel{#2}%
+    \@exerciseRules%
+    \notblank{#1}{\@pointsPerExercise{#1}}{}%
+  }%
+  \par%
+  \notblank{#1}{%
+    \addtocounter{totalpoints}{\points}%
+    \addPT{\arabic{exercisenumber}}{\points}%
+  }{}
 }
 
-\WithSuffix\newcommand\exercise*[1]{%
-\penalty150%
-\def\points{0}
-\stepcounter{exercisenumber}%
-\setcounter{subexercisenumber}{0}%
-\par%
-\vspace{1.5\baselineskip}%
-{%
-{\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
-\@exerciseLabel{#1}%
-\@exerciseRules%
-}%
-\par%
-\addtocounter{totalpoints}{\points}%
+\WithSuffix\newcommand\exercise*[2][]{%
+  \penalty150%
+  \ifblank{#1}{\def\points{0}}{\def\points{#1}}%
+  \stepcounter{exercisenumber}%
+  \setcounter{subexercisenumber}{0}%
+  \par%
+  \vspace{1.5\baselineskip}%
+  {%
+    {\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
+    \@exerciseLabel{#2}%
+    \@exerciseRules%
+    \notblank{#1}{\@pointsPerExercise{#1}}{}%
+  }%
+  \par%
+  \addtocounter{totalpoints}{\points}%
 }
 
 \def\Vhrulefill{\leavevmode\leaders\hrule height 0.7ex depth \dimexpr0.4pt-0.7ex\hfill\kern0pt}
 \newcommand{\exerciseRules}{
-\renewcommand{\@exerciseRules}{\hspace{1em}\Vhrulefill}
-\renewcommand{\@subexerciseRules}{\hspace{0em}\Vhrulefill}
+  \renewcommand{\@exerciseRules}{\hspace{1em}\Vhrulefill}
+  \renewcommand{\@subexerciseRules}{\hspace{0em}\Vhrulefill}
 }
 \newcommand{\@exerciseRules}{}
 \newcommand{\@subexerciseRules}{}
 
 \newcommand{\@exerciseLabel}[1]{
-\quad\ifstrempty{#1}{}{\bfseries(#1)}
+  \quad\ifstrempty{#1}{}{\bfseries(#1)}
 }
 
 \newcommand{\nopoints}{
-\renewcommand{\@pointsPerExercise}{}
-\renewcommand{\gradingtable}{}
-\renewcommand{\exercise}{\@exerciseNoPoints}
+  \renewcommand{\@pointsPerExercise}{}
+  \renewcommand{\gradingtable}{}
+  \renewcommand{\exercise}{\@exerciseNoPoints}
 }
 
 \newcommand{\@exerciseNoPoints}[1]{
-\def\points{0}
-\stepcounter{exercisenumber}
-\setcounter{subexercisenumber}{0}
-\par
-\vspace{1.5\baselineskip}
-{
-{\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
-\@exerciseLabel{#1}
-\@exerciseRules
-}
-\par
-\addtocounter{totalpoints}{\points}
-\addPT{\arabic{exercisenumber}}{\points}
+  \def\points{0}
+  \stepcounter{exercisenumber}
+  \setcounter{subexercisenumber}{0}
+  \par
+  \vspace{1.5\baselineskip}
+  {
+    {\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
+    \@exerciseLabel{#1}
+    \@exerciseRules
+  }
+  \par
+  \addtocounter{totalpoints}{\points}
+  \addPT{\arabic{exercisenumber}}{\points}
 }
 
 \newcommand{\subexercise}[1][]{
-\penalty150
-\stepcounter{subexercisenumber}
-\par
-\vspace{0.5\baselineskip}
-{
-{\bfseries\GetTranslation{subexercise}\ (\alph{subexercisenumber})}%
-\quad\ifstrempty{#1}{}{(#1)}%
-\@subexerciseRules%
-}
-\par
+  \penalty150
+  \stepcounter{subexercisenumber}
+  \par
+  \vspace{0.5\baselineskip}
+  {
+    {\bfseries\GetTranslation{subexercise}\ (\alph{subexercisenumber})}%
+    \quad\ifstrempty{#1}{}{(#1)}%
+    \@subexerciseRules%
+  }
+  \par
 }
 \newcommand{\printsheet}{}
 \newcommand{\sheet}[1]{\def\printsheet{\GetTranslation{sheet} #1}}
@@ -209,8 +216,8 @@
 \newcommand{\pdfmembers}{}
 \newcommand{\pdfmember}[2][]{\expandafter\notblank\expandafter{#1}{#2, {#1};}{#2}}
 \newcommand{\member}[2][]{
-\expandafter\renewcommand\expandafter\printmembers\expandafter{\printmembers\printmember[#1]{#2}}%
-\expandafter\renewcommand\expandafter\pdfmembers\expandafter{\pdfmembers\pdfmember[#1]{#2}}%
+  \expandafter\renewcommand\expandafter\printmembers\expandafter{\printmembers\printmember[#1]{#2}}%
+  \expandafter\renewcommand\expandafter\pdfmembers\expandafter{\pdfmembers\pdfmember[#1]{#2}}%
 }
 \newcommand{\@prefixAuthor}{\GetTranslation{prefixAuthor}}
 \newcommand{\PrefixAuthor}[1]{\renewcommand{\@prefixAuthor}{#1}}
@@ -220,54 +227,56 @@
 % \renewcommand{\@title}{\@course}
 \renewcommand{\and}{\\}
 \renewcommand{\maketitle}{%
-\thispagestyle{empty}%
-{\bfseries\Huge\printcourse}%
-\par%
-\expandafter\notblank\expandafter\printsheet{{\LARGE\printsheet\\}}{}%
-\par%
-\expandafter\notblank\expandafter\printmembers{%
-{\footnotesize\bfseries\@prefixAuthor}\\%
-\hspace*{4pt}{\large{\vspace*{4pt}\begin{tabular}[t]{@{}l}%
-\printmembers%
-\end{tabular}}}\\%
-}{}%
-\expandafter\notblank\expandafter\printdue{%
-{\footnotesize\bfseries\@prefixDate}\\%
-\vspace*{4pt}{\hspace*{4pt}{\large\printdue}}\\%
-}{}%
-\vskip \baselineskip%
-\pagestyle{fancy}%
+  \thispagestyle{empty}%
+  {\bfseries\Huge\printcourse}%
+  \par%
+  \expandafter\notblank\expandafter\printsheet{{\LARGE\printsheet\\}}{}%
+  \par%
+  \expandafter\notblank\expandafter\printmembers{%
+    {\footnotesize\bfseries\@prefixAuthor}\\%
+    \hspace*{4pt}{\large{\vspace*{4pt}\begin{tabular}[t]{@{}l}%
+    \printmembers%
+    \end{tabular}}}\\%
+  }{}%
+  \expandafter\notblank\expandafter\printdue{%
+    {\footnotesize\bfseries\@prefixDate}\\%
+    \vspace*{4pt}{\hspace*{4pt}{\large\printdue}}\\%
+  }{}%
+  \vskip \baselineskip%
+  \pagestyle{fancy}%
 }
 \renewcommand{\headrulewidth}{1pt}
 \setlength\headheight{4\baselineskip}
 \rhead{
-\begin{tabular}{r}
-\textbf{\printcourse} \\
-\printsheet \\
-{\small\printdue}
-\end{tabular}
+  \begin{tabular}{r}
+    \textbf{\printcourse} \\
+    \printsheet \\
+    {\small\printdue}
+  \end{tabular}
 }
 \lhead{
-\small{\begin{tabular}{l}
-\printmembers
-\end{tabular}}
+  \small{%
+    \begin{tabular}{l}
+      \printmembers
+    \end{tabular}%
+  }
 }
 
 \newcommand{\@pdfauthorprefix}{\expandafter\notblank\expandafter{\printgroup}{Group \printgroup: }{}\relax}
 
 \AtBeginDocument{\hypersetup{
-pdftitle = {\texorpdfstring{Assignment \printsheet}{}},
-pdfauthor = {\texorpdfstring{\@pdfauthorprefix\pdfmembers}{}},
-pdfsubject = {\texorpdfstring{\printcourse}{}}
+  pdftitle = {\texorpdfstring{Assignment \printsheet}{}},
+  pdfauthor = {\texorpdfstring{\@pdfauthorprefix\pdfmembers}{}},
+  pdfsubject = {\texorpdfstring{\printcourse}{}}
 }}
 
 \AtEndDocument{
-\makeatletter
-\immediate\write\@mainaux{\string\gdef\string\PTableASaved{\PTableA}}%
-\immediate\write\@mainaux{\string\gdef\string\PTableBSaved{\PTableB}}%
-\immediate\write\@mainaux{\string\gdef\string\PTHeadSaved{\PTHead}}%
-\immediate\write\@mainaux{\string\gdef\string\totalpointsSaved{\arabic{totalpoints}}}%
-\makeatother
+  \makeatletter
+  \immediate\write\@mainaux{\string\gdef\string\PTableASaved{\PTableA}}%
+  \immediate\write\@mainaux{\string\gdef\string\PTableBSaved{\PTableB}}%
+  \immediate\write\@mainaux{\string\gdef\string\PTHeadSaved{\PTHead}}%
+  \immediate\write\@mainaux{\string\gdef\string\totalpointsSaved{\arabic{totalpoints}}}%
+  \makeatother
 }
 
 \newcommand{\N}{\ensuremath{\mathbf{N}}}
