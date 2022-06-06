@@ -1,0 +1,597 @@
+\documentclass{article}
+\title{}
+\author{}
+\date{}
+\begin{document}
+% \maketitle
+% \section{Introduction}
+% 
+% This class file is designed for assignments of university courses, specifically
+% in the field of computer science, but can easily be adapted to other fields. It
+% provides macros for counting exercise points, adding a grading table, a helpful
+% document title block including several non-standard information, and page
+% headers with compressed author details. 
+% 
+% It supports German and English language by default, by requirement of the
+% author's university.
+% 
+% Additional to the layout utilities, the class provides several commonly used
+% macros for computer science topics, namely several mathematical operators,
+% mathmode utilities and special environments for proofs and theorem. Those are a
+% condensed version of macros defined in
+% \url{https://github.com/zoomoid/AlphabetClasses}.
+% 
+% \section{Getting Started}
+% 
+% Use the class like any default document class 
+% \begin{verbatim}
+%   \documentclass[<option>]{assignments}
+% 
+%   \course{}
+%   \group{}
+%   \due{}
+% 
+%   \member{}{}{}
+%   % ...
+% 
+%   \begin{document}
+%   \maketitle
+%   \gradingtable
+% 
+%   \exercise[<Exercise Points>]{<Exercise Title>}
+%   \subexercise{}
+%   \end{document}
+%
+% \end{verbatim}
+%
+% Because it inherits from \texttt{article}, you can pass down any options that
+% \texttt{article} understands. Additionally, pass the option \texttt{sansserif}
+% to use \texttt{helvet} as the default font. I would argue that in the age of
+% assignments being handed in digitally and almost always being reviewed digitally
+% as well, sans-serif fonts should be used as per their recommendation for digital
+% screens, but then again, nowadays most displays have a higher pixel density than most
+% printers and operating systems better rasterization implementations, such that serifs
+% are no longer ugly artifacts. Therefore, the sans-serif default font is only optional,
+% rather \texttt{tgpagella} is used, because it improves upon the already excellent 
+% URW Palladio, which in turn is a free reinterpretation of the Palatino font face.
+%
+% \section{Required Packages}
+%
+% Notably, the class introduces several dependencies. Here's a list of the
+% packages required by \texttt{assignments}:
+%
+% \begin{description}
+%   \item[geometry] \texttt{CTAN:macros/latex/contrib/geometry}
+%   \item[inputenc] \texttt{CTAN:macros/latex/base}
+%   \item[babel] \texttt{CTAN:macros/latex/required/babel/base}
+%   \item[titlesec] \texttt{CTAN:macros/latex/contrib/titlesec}
+%   \item[enumitem] \texttt{CTAN:macros/latex/contrib/enumitem}
+%   \item[tocloft] \texttt{CTAN:macros/latex/contrib/tocloft}
+%   \item[float] \texttt{CTAN:macros/latex/contrib/float}
+%   \item[ifthen] \texttt{CTAN:macros/latex/base}
+%   \item[translations] \texttt{CTAN:macros/latex/contrib/translations}
+%   \item[csquotes] \texttt{CTAN:macros/latex/contrib/csquotes}
+%   \item[fancyhdr] \texttt{CTAN:macros/latex/contrib/fancyhdr}
+%   \item[microtype] \texttt{CTAN:macros/latex/contrib/microtype}
+%   \item[stmaryrd] \texttt{CTAN:fonts/stmaryrd}
+%   \item[graphicx] \texttt{CTAN:macros/latex/required/graphics}
+%   \item[pdfpages] \texttt{CTAN:macros/latex/contrib/pdfpages}
+%   \item[hyperref] \texttt{CTAN:macros/latex/contrib/hyperref}
+%   \item[tikz] \texttt{CTAN:graphics/pgf/base}
+%   \item[microtype] \texttt{CTAN:macros/latex/contrib/microtype}
+%   \item[amsmath] \texttt{CTAN:macros/latex/required/amsmath}
+%   \item[amsthm] \texttt{CTAN:macros/latex/required/amscls}
+%   \item[amssymb] \texttt{CTAN:macros/latex/required/amscls}
+%   \item[mathtools] \texttt{CTAN:macros/latex/contrib/mathtools}
+%   \item[totcount] \texttt{CTAN:macros/latex/contrib/totcount}
+%   \item[changepage] \texttt{CTAN:macros/latex/contrib/changepage}
+%   \item[etoolbox] \texttt{CTAN:macros/latex/contrib/etoolbox}
+%   \item[environ] \texttt{CTAN:macros/latex/contrib/environ}
+%   \item[multicol] \texttt{CTAN:macros/latex/required/tools}
+%   \item[tgpagella] \texttt{CTAN:fonts/tex-gyre}
+%   \item[suffix] \texttt{CTAN:macros/latex/contrib/bigfoot}
+%   \item[helvet] \texttt{CTAN:macros/latex/required/psnfss}
+% \end{description}
+\RequirePackage[left=2.5cm,right=2.5cm,top=2cm,bottom=2cm,includeheadfoot]{geometry}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[english]{babel}
+\RequirePackage{titlesec}
+\RequirePackage{enumitem}
+\RequirePackage{graphicx}
+\RequirePackage{tocloft}
+\RequirePackage{float}
+\RequirePackage{ifthen}
+\RequirePackage{translations}
+\RequirePackage{csquotes}
+\RequirePackage{fancyhdr}
+\RequirePackage{microtype}
+\RequirePackage{stmaryrd}
+\RequirePackage{pdfpages}
+\RequirePackage[hidelinks, unicode]{hyperref}
+\RequirePackage{tikz}
+\RequirePackage{microtype}
+\RequirePackage[fleqn]{amsmath}
+\RequirePackage{amsthm}
+\RequirePackage{amssymb}
+\RequirePackage{mathtools}
+\RequirePackage{totcount}
+\RequirePackage{changepage}
+\RequirePackage{etoolbox}
+\RequirePackage{environ}
+\RequirePackage{multicol}
+\RequirePackage{tgpagella}
+\RequirePackage{suffix}
+\RequirePackage{helvet}
+\usetikzlibrary{arrows,calc}
+% \section{Translations}
+% \texttt{assignments} comes with several predefined prefixes that are localized in both 
+% English and German:
+% \begin{macrocode}
+\DeclareLanguage{english}
+\DeclareLanguage{german}
+\select@language{english}
+
+\ProvideTranslation{german}{prefixAuthor}{Eingereicht von}
+\ProvideTranslation{english}{prefixAuthor}{Handed in by}
+\ProvideTranslationFallback{prefixAuthor}{Handed in by}
+
+\ProvideTranslation{german}{prefixDate}{am}
+\ProvideTranslation{english}{prefixDate}{on}
+\ProvideTranslationFallback{prefixDate}{on}
+
+\ProvideTranslation{ngerman}{exercise}{Aufgabe}
+\ProvideTranslation{english}{exercise}{Exercise}
+\ProvideTranslationFallback{exercise}{Exercise}
+
+\ProvideTranslation{ngerman}{exerciseAbbrev}{Aufg.}
+\ProvideTranslation{english}{exerciseAbbrev}{Ex.}
+\ProvideTranslationFallback{exerciseAbbrev}{Ex.}
+
+\ProvideTranslation{ngerman}{subexercise}{Teilaufgabe}
+\ProvideTranslation{english}{subexercise}{Subexercise}
+\ProvideTranslationFallback{subexercise}{Subexercise}
+
+\ProvideTranslation{ngerman}{points}{Punkte}
+\ProvideTranslation{english}{points}{Points}
+\ProvideTranslationFallback{points}{Points}
+
+\ProvideTranslation{ngerman}{sheet}{Abgabe}
+\ProvideTranslation{english}{sheet}{Exercise Sheet}
+\ProvideTranslationFallback{sheet}{Exercise Sheet}
+
+\ProvideTranslation{ngerman}{studentId}{Matr.Nr.}
+\ProvideTranslation{english}{studentId}{Student ID}
+\ProvideTranslationFallback{studentId}{Student ID}
+% \end{macrocode}
+% \begin{macrocode}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+% \end{macrocode}
+%
+% \section{Grouping Exercises}
+%
+% \begin{macrocode}
+\newtotcounter{exercisenumber}
+\newtotcounter{subexercisenumber}
+\newtotcounter{totalpoints}
+\edef\exerciseLabelGradingTable{}
+\edef\gradingTableExercisePoints{}
+\edef\PTableA{}
+\edef\PTableB{}
+\edef\PTHead{}
+\newcommand{\@addPT}[2]{
+  \edef\gradingTableExerciseLabel{\GetTranslation{exerciseAbbrev} #1 &}
+  \edef\gradingTableExercisePoints{\qquad / $#2$ &}
+  \xappto\PTableA{\gradingTableExerciseLabel}
+  \xappto\PTableB{\gradingTableExercisePoints}
+  \xappto\PTHead{c | }
+}
+\newcommand{\gradingtable}{%
+  \ifdef{\PTHeadSaved}{%
+    {\Large\bfseries Grading Table}\\%
+    \begin{table}[h!]
+      \renewcommand\arraystretch{2}%
+      \begin{tabular}{\expandonce{\PTHeadSaved} c}
+        \PTableASaved {\Large$\Sigma$}\\ \hline
+        \PTableBSaved \qquad / $\totalpointsSaved$
+      \end{tabular}
+      \renewcommand{\arraystretch}{1}%
+    \end{table}
+  }{\texttt{Compile again}\ClassWarning{Compile again to properly display grading table}}%
+}
+% \end{macrocode}
+%
+% \begin{macro}{\exercise\oarg{exercise points}\marg{exercise title}}
+% \begin{macro}{\exercise*\oarg{exercise points}\marg{exercise title}} 
+% On top-level, assignments consist of one or more exercise. The
+% \cmd{\exercise}\oarg{exercise points}\marg{exercise title} macro provides a
+% numbered section title for your assignment. The mandatory argument should
+% contain the exercise's title which is then included in the section title, or
+% be left blank, in which case nothing is appended to the exercise title. The
+% optional argument contains the points rewarded for the exercise in total.
+%
+% Exercise points are added up in the first run of pdflatex (or your TeX
+% backend of choice) and written to the auxilliary file. On the second run,
+% the grading table is added to the top of the document, by inclusion of the
+% points stored in the first run. \textbf{This is the reason assignments
+% requires two or more runs when used with the grading table}.
+%
+% If you do not specify points, that is, leave the optional argument field
+% empty, the awarded points for the exercise will be set to zero, but the
+% exercise will not be included in the grading table.
+%
+% If you do not specify a title, no empty parentheses are printed.
+%
+% Using the starred version of the exercise command will allow you to
+% explicitly exclude exercise from the grading table (similar to
+% \cmd{section*}\marg{section title} not being included in the table of
+% contents). Note that you can set points on explicitly excluded exercises.
+% The exercise will not count towards the total number of points, but the
+% points for the exercise will still be included in the right column of the
+% exercise's title line. This might be particularly helpful for modelling
+% bonus exercises.
+% \begin{macrocode}
+\newcommand{\@pointsPerExercise}[1]{
+  \ifstrempty{#1}{}{{\quad\large\bfseries/#1 \GetTranslation{points}}}
+}
+\newcommand\exercise[2][]{%
+  \penalty150%
+  \ifblank{#1}{\def\points{0}}{\def\points{#1}}%
+  \stepcounter{exercisenumber}%
+  \setcounter{subexercisenumber}{0}%
+  \par%
+  \vspace{1.5\baselineskip}%
+  {%
+    {\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
+    \@exerciseLabel{#2}%
+    \@exerciseRules%
+    \notblank{#1}{\@pointsPerExercise{#1}}{}%
+  }%
+  \par%
+  \notblank{#1}{%
+    \addtocounter{totalpoints}{\points}%
+    \@addPT{\arabic{exercisenumber}}{\points}%
+  }{}%
+}
+\WithSuffix\newcommand\exercise*[2][]{%
+  \penalty150%
+  \ifblank{#1}{\def\points{0}}{\def\points{#1}}%
+  \stepcounter{exercisenumber}%
+  \setcounter{subexercisenumber}{0}%
+  \par%
+  \vspace{1.5\baselineskip}%
+  {%
+    {\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
+    \@exerciseLabel{#2}%
+    \@exerciseRules%
+    \notblank{#1}{\@pointsPerExercise{#1}}{}%
+  }%
+  \par%
+  \addtocounter{totalpoints}{\points}%
+}
+\AtEndDocument{
+  \makeatletter
+  \immediate\write\@mainaux{\string\gdef\string\PTableASaved{\PTableA}}%
+  \immediate\write\@mainaux{\string\gdef\string\PTableBSaved{\PTableB}}%
+  \immediate\write\@mainaux{\string\gdef\string\PTHeadSaved{\PTHead}}%
+  \immediate\write\@mainaux{\string\gdef\string\totalpointsSaved{\arabic{totalpoints}}}%
+  \makeatother
+}
+% \end{macrocode}
+%
+% \begin{macro}{\subexercise}
+% Subexercises are the subsection to section equivalent for exercises. In fact,
+% their counters behave the same way as subsection counters do.
+% \cmd{\subexercise}\oarg{Subexercise title} will make a new subexercise under the
+% current exercise. Note that point counting for subexercises is not supported.
+% Rather, points are only awarded on the exercise level. Therefore, subexercises
+% are rather semantical for the exercise's reading flow.
+% \begin{macrocode}
+\newcommand{\subexercise}[1][]{
+  \penalty150
+  \stepcounter{subexercisenumber}
+  \par
+  \vspace{0.5\baselineskip}
+  {
+    {\bfseries\GetTranslation{subexercise}\ (\alph{subexercisenumber})}%
+    \quad\ifstrempty{#1}{}{(#1)}%
+    \@subexerciseRules%
+  }
+  \par
+}
+% \end{macrocode}
+% \end{macro}
+% \begin{macrocode}
+\def\Vhrulefill{\leavevmode\leaders\hrule height 0.7ex depth
+\dimexpr0.4pt-0.7ex\hfill\kern0pt}
+% \end{macrocode}
+% \begin{macro}{\exerciseRules}
+% \begin{macro}{\subexerciseRules}
+% To add line-spanning horizontal rules between exercises and subexercises,
+% respectively, for better visual separation, add \cmd{\exerciseRules} add some
+% point in the document before the first exercise.
+% \begin{macrocode}
+\newcommand{\exerciseRules}{
+  \renewcommand{\@exerciseRules}{\hspace{1em}\Vhrulefill} }
+  \newcommand{\subexerciseRules}{
+  \renewcommand{\@subexerciseRules}{\hspace{0em}\Vhrulefill} }
+\newcommand{\@exerciseRules}{}
+\newcommand{\@subexerciseRules}{}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\noPoints}
+% To remove points and grading entirely from the
+% document, add \cmd{\noPoints} at some point in the document before the first
+% exercise. This overwrites the grading table macro and defines the exercise
+% command to not count points.
+% \begin{macrocode}
+\newcommand{\nopoints}{
+  \renewcommand{\@pointsPerExercise}{}
+  \renewcommand{\gradingtable}{}
+  \renewcommand{\exercise}{\@exerciseNoPoints}
+}
+\newcommand{\@exerciseNoPoints}[1]{ 
+  \def\points{0}
+  \stepcounter{exercisenumber}
+  \setcounter{subexercisenumber}{0}
+  \par
+  \vspace{1.5\baselineskip}
+  { {\Large\bfseries\GetTranslation{exercise}\ \arabic{exercisenumber}}%
+    \@exerciseLabel{#1} \@exerciseRules }
+  \par
+}
+% \end{macrocode}
+% \section{Document Title}
+% The \texttt{assignments} class offers several customizations to the default title of article.
+% Namely, we can omit the default fields \cmd{\title}, \cmd{\author}, and \cmd{\date}, and 
+% replace them with something more fitting to an assignment:
+% \begin{macrocode}
+\newcommand{\@course}{Assignment}
+\newcommand{\@sheet}{}
+\newcommand{\@group}{}
+\newcommand{\@prefixId}{\GetTranslation{studentId} }
+\newcommand{\@members}{}
+\newcommand{\@member}[2][]{\notblank{#1}{#2, \notblank{#1}{\@prefixId{#1}}{} \\}{#2}}
+\newcommand{\@due}{}
+\newcommand{\@prefixAuthor}{\GetTranslation{prefixAuthor}}
+\newcommand{\@prefixDate}{\GetTranslation{prefixDate}}
+% \end{macrocode}
+% \begin{macro}{\course}
+% \begin{macro}{\sheet}
+% \begin{macro}{\group}
+% \begin{macro}{\due}
+% \begin{macro}{\member}
+% Course name with \cmd{\course}\marg{Course}, sheet number with \cmd{\sheet}\marg{sheet number},
+% group name with \cmd{\group}\marg{group name}, due date with \cmd{\due}\marg{due date},
+% and all members of the group with repeated \cmd{\member}\oarg{student id}\marg{name}.
+% \begin{macrocode}
+\newcommand{\course}[1]{\expandafter\notblank\expandafter{#1}{\def\@course{#1}}{}}
+\newcommand{\sheet}[1]{\def\@sheet{\GetTranslation{sheet} #1}}
+\newcommand{\group}[1]{\renewcommand{\@group}{#1}}
+\newcommand{\due}[1]{\renewcommand{\@due}{#1}}
+\newcommand{\member}[2][]{
+  \expandafter\renewcommand\expandafter\@members\expandafter{\@members\@member[#1]{#2}}%
+  \expandafter\renewcommand\expandafter\pdfmembers\expandafter{\pdfmembers\pdfmember[#1]{#2}}%
+}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\PrefixId}
+% \begin{macro}{\PrefixAuthor}
+% \begin{macro}{\PrefixDate}
+% Additionally, you can redefine the prefixes prepended to the individual parts of the title, for example,
+% the default (english) prefix for the members line in the title block is ``Handed in by'', which you can
+% replace by using \cmd{\PrefixDate}\marg{custom due date prefix}.
+% \begin{macrocode}
+\newcommand{\PrefixId}[1]{\renewcommand{\@prefixId}{#1}}
+\newcommand{\PrefixAuthor}[1]{\renewcommand{\@prefixAuthor}{#1}}
+\newcommand{\PrefixDate}[1]{\renewcommand{\@prefixDate}{#1}}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macrocode}
+\renewcommand{\and}{\\}
+\renewcommand{\maketitle}{%
+  \thispagestyle{empty}%
+  {\bfseries\Huge\@course}%
+  \par%
+  \expandafter\notblank\expandafter\@sheet{{\LARGE\@sheet\\}}{}%
+  \par%
+  \expandafter\notblank\expandafter\@members{%
+    {\footnotesize\bfseries\@prefixAuthor}\\%
+    \hspace*{4pt}{\large{\vspace*{4pt}\begin{tabular}[t]{@{}l}%
+    \@members%
+    \end{tabular}}}\\%
+  }{}%
+  \expandafter\notblank\expandafter\@due{%
+    {\footnotesize\bfseries\@prefixDate}\\%
+    \vspace*{4pt}{\hspace*{4pt}{\large\@due}}\\%
+  }{}%
+  \vskip \baselineskip%
+  \pagestyle{fancy}%
+}
+\renewcommand{\headrulewidth}{1pt}
+\setlength\headheight{4\baselineskip}
+\rhead{
+  \begin{tabular}{r}
+    \textbf{\@course} \\
+    \@sheet \\
+    {\small\@due}
+  \end{tabular}
+}
+\lhead{
+  \small{%
+    \begin{tabular}{l}
+      \@members
+    \end{tabular}%
+  }
+  }
+% \end{macrocode}
+% 
+% Lastly, the class handles PDF metadata creation using \texttt{hyperref} from the provided
+% macros, i.e., \cmd{\course}, \cmd{\group} etc.
+% \begin{macrocode}
+\newcommand{\@pdfauthorprefix}{\expandafter\notblank\expandafter{\@group}{Group \@group: }{}\relax}
+\newcommand{\pdfmembers}{}
+\newcommand{\pdfmember}[2][]{\expandafter\notblank\expandafter{#1}{#2, {#1};}{#2}}
+\AtBeginDocument{\hypersetup{
+  pdftitle = {\texorpdfstring{Assignment \@sheet}{}},
+  pdfauthor = {\texorpdfstring{\@pdfauthorprefix\pdfmembers}{}},
+  pdfsubject = {\texorpdfstring{\@course}{}}
+}}
+% \end{macrocode}
+%
+% \section{Math Helpers}
+%
+% \texttt{assignments} includes several frequently used macros for mathmode, that were,
+% and still are, helpful with assignment work during several computer science courses.
+% Most of them were originally created in one of the \textsc{AlphabetClasses} packages,
+% which featured a lot more definitions.
+%
+% This class only contains a condensed version of them:
+%
+% \begin{macro}{\N}
+% \begin{macro}{\Z}
+% \begin{macro}{\R}
+% \begin{macro}{\Q}
+% \begin{macro}{\C}
+% \begin{macro}{\F}
+% \begin{macro}{\primefield}
+% These macros define common number spaces and fields as double font in mathmode. Notably,
+% \cmd{\primefield} makes a double-printed P, as notation for an arbitrary prime field.
+% \begin{macrocode}
+\newcommand{\N}{\ensuremath{\mathbf{N}}}
+\newcommand{\Z}{\ensuremath{\mathbf{Z}}}
+\newcommand{\R}{\ensuremath{\mathbf{R}}}
+\newcommand{\Q}{\ensuremath{\mathbf{Q}}}
+\newcommand{\C}{\ensuremath{\mathbf{C}}}
+\newcommand{\F}{\ensuremath{\mathbb{F}}}
+\newcommand{\primefield}{\ensuremath{\mathbb{P}}}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\modring}
+% Denoting a ring of integers modulo \(n\) is easily done in short notation with \cmd{\modring},
+% see \(\mathbb{Z}/\n\:\), which even works in regular text due to custom trailing spacing.
+% \begin{macrocode}
+\newcommand{\modring}[2]{#1/\!#2\:}
+% \end{macrocode}
+% \end{macro}
+% \begin{macro}{\derivative}
+% The \cmd{\derivative}\marg{variable} prints a typical \(\frac{d}{dx}\) as a shorthand macro.
+% Notably it is not even shorter than the explicit fracture, it is just a convenience macro created
+% at a time when writing \LaTeX for assignments was supported by semantic macros (a thing \LaTeX
+% clearly lacks).
+% \begin{macrocode}
+\newcommand{\derivative}[1]{\ensuremath{\frac{d}{d#1}}}
+% \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\divides}
+% \begin{macro}{\property}
+% \cmd{\divides} and \cmd{\property} do the same thing under the hood, while having different
+% semantics. \cmd{\divides} denotes the binary relation of \(a\) divides \(b\), whereas 
+% \cmd{\property} should be used to separate declaration from restrictions in a definition of a set,
+% namely the vertical bar in \(\{x \ |\ x \in \mathbb{R}\}\).
+% \begin{macrocode}
+\newcommand{\divides}{\ensuremath{\ |\ }}
+\newcommand{\property}{\ensuremath{\ |\ }}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+% 
+% \begin{macro}{\matadd}
+% \begin{macro}{\matmul}
+% \begin{macro}{\matswap}
+% These macros are helpful when visualizing matrix operations, namely addition of rows,
+% scalar multiplication of a row, and swapping of rows. Arguments of the macros are identical
+% to the group operation's parameter.
+% \begin{macrocode}
+\newcommand{\matadd}[3]{\ensuremath{\xmapsto{\mathrm{add}_{#1,#2,#3}}}}
+\newcommand{\matmul}[2]{\ensuremath{\xmapsto{\mathrm{mul}_{#1,#2}}}}
+\newcommand{\matswap}[2]{\ensuremath{\xmapsto{\mathrm{sw}_{#1,#2}}}}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% 
+% \begin{macro}{\forall}
+% \begin{macro}{\exists}
+% To make logic quantors look a bit better, we redefine the ``for all'' and ``exists'' quantors with 
+% a bit more horizontal space left and right
+% \begin{macrocode}
+\renewcommand{\forall}{\ensuremath{\hskip 2pt \oforall \hskip 2pt}}
+\renewcommand{\exists}{\ensuremath{\hskip 2pt \oexists \hskip 2pt}}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \begin{macro}{\floor}
+% \begin{macro}{\ceil}
+% \begin{macro}{\abs}
+% These are some commonly used mathematical functions, that is, rounding up or down, 
+% and the absolute function of a value.
+% \begin{macrocode}
+\newcommand{\ceil}[1]{\ensuremath{\left\lceil #1 \right \rceil}}
+\newcommand{\floor}[1]{\ensuremath{\left\lfloor #1 \right \rfloor}}
+\newcommand{\abs}[1]{\ensuremath{\left\vert#1\right\vert}}
+% \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\rfrac}
+% For inline math, regular fractions tend to either stretch the line height, 
+% resulting in optical heterogeneity of multiple lines, or setting the letters 
+% in the fraction so small that they become unreadable. For small, inline fractions,
+% \cmd{\rfrac}\marg{numerator}\marg{denominator} offers a less optically noisy option,
+% by setting the numerator and denominator in a diagonal arrangement, rahter than purely 
+% vertical. Here are some examples: \({}^{1}\!/_{n}\), \({}^{2n}\!/_{k}\), \({}^{100}\!/_{4}\).
+% \begin{macrocode}
+\newcommand{\rfrac}[2]{{}^{#1}\!/_{#2}}
+% \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\mod}
+% The macro defines the usual modulus function with a bit of extra space to the left and right.
+% \begin{macrocode}
+\renewcommand{\mod}{\ \mathrm{mod}\ }
+% \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\rel}
+% To make a new, arbitrary relation, that is, a symbol for with \texttt{amsmath} ensures horizontal
+% space left and right using \cmd{\mathrel}
+% \begin{macrocode}
+\newcommand{\rel}[1]{\ensuremath{\mathrel{#1}}}
+% \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\QED}
+% Ending a proof the way tought at RWTH Aachen University, with a square flushed to the right of
+% the line, can be done by simply adding \cmd{\QED}.
+% Note however that it is semantically more elegant to use \texttt{amsthm} with either predefined
+% \texttt{proof} environment, or any custom environment, as these usually also handle adding a label
+% to the block, e.g., ``\textbf{Proof}.'' or ``\textbf{Lemma}''.
+% \begin{macrocode}
+\newcommand{\QED}{\hfill\(\square\)}
+% \end{macrocode}
+% \end{macro}
+% \begin{macrocode}
+\newtheoremstyle{it}{3pt}{3pt}{}{}{\itshape}{:}{.5em}{}
+\theoremstyle{it}
+% \end{macrocode}
+
+\end{document}
