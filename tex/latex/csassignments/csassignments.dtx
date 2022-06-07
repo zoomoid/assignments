@@ -2,15 +2,35 @@
 %
 % Copyright (C) 2022 by Alexander Bartolomey
 % -------------------------------------------
+% MIT License
 %
+% Copyright (c) 2022
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+% 
+% The above copyright notice and this permission notice shall be included in all
+% copies or substantial portions of the Software.
+%
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+% SOFTWARE.
 % \fi
 % \iffalse
 %<*driver>
-\ProvidesFile{assignments.dtx}
+\ProvidesFile{csassignments.dtx}
 %</driver>
 %    \begin{macrocode}
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{assignments}[2022/06/01 v1.0.0 Assignments Class]
+\ProvidesClass{csassignments}[2022/06/01 v1.0.0 Assignments Class for CS]
 %    \end{macrocode}
 %
 %<*driver>
@@ -27,13 +47,13 @@
 \usepackage{helvet}
 \renewcommand{\familydefault}{\sfdefault}
 \begin{document}
-  \DocInput{assignments.dtx}
+  \DocInput{csassignments.dtx}
 \end{document}
 %</driver>
 %    \end{macrocode}
 % \fi
 %
-% \CheckSum{0}
+% \CheckSum{574}
 %
 % \CharacterTable
 %  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
@@ -52,10 +72,11 @@
 %   Right brace   \}     Tilde         \~}
 %
 % \changes{v1.0.0}{2022/06/01}{Publish class with documentation}
+% \changes{v1.0.1}{2022/06/07}{Rename class to not collide with existing assignments class}
 %
-% \GetFileInfo{assignments.cls}
+% \GetFileInfo{csassignments.cls}
 %
-% \title{The \texttt{assignments} class}
+% \title{The \texttt{csassignments} class}
 % \date{}
 % \author{Alexander Bartolomey}
 % \maketitle
@@ -85,7 +106,7 @@
 % Use the class like any default document class 
 %
 % \begin{verbatim}
-%   \documentclass[<option>]{assignments}
+%   \documentclass[<option>]{csassignments}
 % 
 %   \course{}
 %   \group{}
@@ -120,7 +141,7 @@
 % \section{Required Packages}
 %
 % Notably, the class introduces several dependencies. Here's a list of the
-% packages required by \texttt{assignments}:
+% packages required by \texttt{csassignments}:
 %
 % \begin{description}
 %   \item[geometry] \texttt{CTAN:macros/latex/contrib/geometry}
@@ -189,7 +210,7 @@
 %    \end{macrocode}
 %
 % \section{Translations}
-% \texttt{assignments} comes with several predefined prefixes that are localized in both 
+% \texttt{csassignments} comes with several predefined prefixes that are localized in both 
 % English and German:
 %    \begin{macrocode}
 \DeclareLanguage{english}
@@ -276,7 +297,7 @@
 % Exercise points are added up in the first run of pdflatex (or your TeX
 % backend of choice) and written to the auxilliary file. On the second run,
 % the grading table is added to the top of the document, by inclusion of the
-% points stored in the first run. \textbf{This is the reason assignments
+% points stored in the first run. \textbf{This is the reason csassignments
 % requires two or more runs when used with the grading table}.
 %
 % If you do not specify points, that is, leave the optional argument field
@@ -413,7 +434,7 @@
 %    \end{macrocode}
 % \end{macro}
 % \section{Document Title}
-% The \texttt{assignments} class offers several customizations to the default title of article.
+% The \texttt{csassignments} class offers several customizations to the default title of article.
 % Namely, we can omit the default fields \cmd{\title}, \cmd{\author}, and \cmd{\date}, and 
 % replace them with something more fitting to an assignment:
 %    \begin{macrocode}
@@ -526,7 +547,7 @@
 %
 % \section{Math Helpers}
 %
-% \texttt{assignments} includes several frequently used macros for mathmode, that were,
+% \texttt{csassignments} includes several frequently used macros for mathmode, that were,
 % and still are, helpful with assignment work during several computer science courses.
 % Most of them were originally created in one of the \textsc{AlphabetClasses} packages,
 % which featured a lot more definitions.
