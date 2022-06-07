@@ -27,8 +27,22 @@ type GroupMember struct {
 	ID string `json:"id"`
 }
 
+type InstallationType string
+
+const (
+	// InstallationTypeLocal hints to documentclass being a relative path
+	InstallationTypeLocal InstallationType = "local"
+	// InstallationTypeCTAN indicates the class not being available locally yet, but
+	// using the MikTeX mpm subsystem for getting the class from CTAN
+	InstallationTypeCTAN InstallationType = "ctan"
+	// InstallationTypeSystemWide indicates the csassignment class being available in
+	// a local TeXMF tree
+	InstallationTypeSystemWide InstallationType = "systemwide"
+)
+
 // ConfigurationStatus contains the fields permutated by commands other than the bootstrapping
 type ConfigurationStatus struct {
 	// Assignment records the current assignment number
-	Assignment uint32 `json:"assignment"`
+	Assignment       uint32           `json:"assignment"`
+	InstallationType InstallationType `json:"installationType"`
 }
