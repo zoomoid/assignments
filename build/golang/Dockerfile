@@ -53,7 +53,10 @@ WORKDIR /miktex/work
 RUN mkdir -p /miktex/user/texmf/tex/latex
 
 # add assignments.cls to the TEXMF directory
-ADD https://github.com/zoomoid/assignments/releases/latest/download/assignments.cls /miktex/user/texmf/tex/latex/assignments/assignments.cls
+ADD https://github.com/zoomoid/assignments/releases/latest/download/assignments.ins /miktex/user/texmf/tex/latex/assignments/assignments.ins
+ADD https://github.com/zoomoid/assignments/releases/latest/download/assignments.dtx /miktex/user/texmf/tex/latex/assignments/assignments.dtx
+
+RUN latex /miktex/user/texmf/tex/latex/assignments/assignments.ins
 
 RUN initexmf --register-root=/miktex/user/texmf && \
   initexmf --update-fndb
