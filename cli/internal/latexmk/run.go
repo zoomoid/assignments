@@ -3,18 +3,16 @@ package latexmk
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/zoomoid/assignments/v1/internal/context"
 )
 
-// Options struct to carry configuration for the latexmk runs
-type RunnerOption struct {
+// RunnerOptions struct to carry configuration for the latexmk runs
+type RunnerOptions struct {
 	// Directory to run latexmk from
 	TargetDirectory string
 	// TeX source file to compile, defaults to "assignment.tex"
@@ -29,13 +27,16 @@ type RunnerOption struct {
 
 type RunnerContext struct {
 	context.AppContext
-	RunnerOption
+	RunnerOptions
 }
 
-const latexmkOptions = "-pdf -interaction=nonstopmode -file-line-error -shell-escape"
+var (
+	defaultProgram        = "latexmk"
+	defaultLatexmkOptions = []string{"-pdf", "-interaction=nonstopmode", "-file-line-error", "-shell-escape"}
+)
 
 // New creates a new runner context from the given parameters and applies sensible defaults
-func New(context *context.AppContext, options *RunnerOption) (*RunnerContext, error) {
+func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, error) {
 	runner := &RunnerContext{
 		AppContext: *context,
 	}
@@ -66,7 +67,7 @@ func New(context *context.AppContext, options *RunnerOption) (*RunnerContext, er
 }
 
 // NewMust creates a new runner context or exits with error if creation fails
-func NewMust(context *context.AppContext, options *RunnerOption) *RunnerContext {
+func NewMust(context *context.AppContext, options *RunnerOptions) *RunnerContext {
 	r, err := New(context, options)
 	if err != nil {
 		context.Logger.Fatalf("Failed to create runner context, %v", err)
@@ -80,7 +81,7 @@ func (r *RunnerContext) RunClean() error {
 
 	r.Logger.Infof("Cleaning up using latexmk", "pwd", r.Cwd)
 
-	cmd := exec.Command("latexmk", "-C")
+	cmd := exec.Command(defaultProgram, "-C")
 
 	if r.Quiet {
 		cmd.Stdout = out
@@ -110,7 +111,7 @@ func combineBuffers(buffers *[]bytes.Buffer) (*bytes.Buffer, error) {
 
 // RunBuildOnce runs latexmk once and returns the output from the run
 func (r *RunnerContext) RunBuildOnce() (*bytes.Buffer, error) {
-	r.Logger.Info("[1/1] Running latexmk", "pwd", r.TargetDirectory)
+	r.Logger.Info("[1/1] Running compiler", "pwd", r.TargetDirectory)
 	output, err := r.runBuild()
 	return output, err
 }
@@ -121,7 +122,7 @@ func (r *RunnerContext) RunBuildMultiple() (*bytes.Buffer, error) {
 
 	var err error
 	for i := 1; i <= r.Runs; i++ {
-		r.Logger.Infof("[%d/%d] Running latexmk", i, r.Runs, "pwd", r.TargetDirectory)
+		r.Logger.Infof("[%d/%d] Running compiler", i, r.Runs, "pwd", r.TargetDirectory)
 		b, err := r.runBuild()
 		if err != nil {
 			// break on first error occurence
@@ -143,11 +144,20 @@ func (r *RunnerContext) RunBuildMultiple() (*bytes.Buffer, error) {
 func (r *RunnerContext) runBuild() (*bytes.Buffer, error) {
 	out := &bytes.Buffer{}
 
-	args := strings.Split(latexmkOptions, " ")
-	fileOption := strings.Split(fmt.Sprintf("-f %s", r.Filename), " ")
-	args = append(args, fileOption...)
+	recipe := r.Configuration.Spec.BuildOptions.Recipe
 
-	cmd := exec.Command("latexmk", args...)
+	program := defaultProgram
+	args := defaultLatexmkOptions
+	if recipe != nil && recipe.Command != "" {
+		program = recipe.Command
+	}
+	if recipe != nil && len(recipe.Args) > 0 {
+		args = recipe.Args
+	}
+
+	args = append(args, "-f", r.Filename)
+
+	cmd := exec.Command(program, args...)
 
 	if r.Quiet {
 		cmd.Stdout = out
