@@ -15,31 +15,29 @@ packages for all sorts of stuff: <https://github.com/zoomoid/alphabetclasses>.
 Several of these macros and packages only ever experienced one iteration, and
 where immediately superseeded by another class or package. Finally, after years
 of iterating over which macros where essential and designing a layout for
-assignments that was generally accepted, `assignments` was created.
+assignments that was generally accepted, `csassignments` was created.
 
-## assigments.cls
+## csassigments.cls
 
-`assignments` brings several macros for working on at least Computer Science
+`csassignments` brings several macros for working on at least Computer Science
 assignments, but you can always add more functionality. For more details,
-consider the classes' documentation.
+consider the classes' documentation, either from source ([TeXDoc](./tex/latex/csassignments/csassignments.dtx)) or
+online on CTAN (<https://www.ctan.org/pkg/csassignments>).
 
 Use it either in the document's root directory, or add it to your personal texmf
 directory:
 
 ```latex
-\documentclass{assignments}
-\title{}
-\author{}
-\date{}
+\documentclass{csassignments}
 
 \course{} % course will replace title in maketitle
 \group{} % group works like a subtitle
-\member{}{}{} % members are like authors, but with a separation into ID, name, and surname
+\member[]{} % members are like authors, but with a separation into ID, name, and surname
 \due{} % add a due date, automatically prefixed with "Handed in on"
 
 \begin{document}
 \maketitle % makes the documents header
-\gradingtable{} % adds a grading table between title and exercises
+\gradingtable % adds a grading table between title and exercises
 
 \exercise[<points>]{<title>} % add an exercise
 
@@ -47,6 +45,121 @@ directory:
 % (points are ignored, only top-level exercise points are added up to sum in grading table)
 
 \end{document}
+```
+
+## Prerequisites for LaTeX
+
+To compile your assignments, you'll have to have access to your local LaTeX installation to install packages.
+Depending on your TeX distribution and operating system, this varies, also whether you install packages locally
+or system-wide.
+
+To reduce comlexity for all those different deployment methods, we push installing the LaTeX class down to your
+TeX distro:
+
+1. **MikTeX**: You won't need to do anything, MikTeX will download the class from your closest CTAN mirror. You might have to confirm installing the class
+2. **TeXLive**: If something different to `texlive-full` is installed on your system, run `tlmgr install csassignments` to install the class for your user's TeX installation
+3. **Other distros**: Follow a guide on how to install packages.
+
+If you don't require building the assignments (simply because you can flawlessly write TeX code) or chose to run LaTeX in a container (e.g. `miktex/miktex`), the installation is either the same as if you run from the host system, *or* you use
+the container image provided from this repository:
+
+> Depending on your container runtime, you might have to adjust some of the command's arguments
+
+```bash
+# Run a bash inside the container to build your assignments with LaTeX directly 
+#
+# On UNIX
+$ docker run -ti -v $(pwd):/work ghcr.io/zoomoid/assignments bash
+# In PowerShell for Windows users
+$ docker run -ti -v ${PWD}:/work ghcr.io/zoomoid/assignments bash
+```
+
+The image is Ubuntu-based, and installs the most recent version of MikTeX available. MikTeX will then install the `csassignments` class on-demand.
+
+If you'd like to cache the installed packages for later use again, provide an additional (anonymous) volume for the
+installation path of MikTeX: `-v miktex:/miktex/.miktex`.
+
+## Installation
+
+Download the binary fit for your OS from the Release page or build the CLI from source.
+
+> TODO: add build instructions
+
+Afterwards, move the binary created somewhere into your $PATH such that you can use it directly
+in your command line.
+
+## Usage
+
+### Initialization
+
+In a fresh directory (or repository), run
+
+```bash
+$ assignments bootstrap
+```
+
+If no further flags are set, the CLI will prompt you for several properties, namely:
+
+1. Course name
+2. Group name
+3. Group Members, passed in the format of `"<Name>;<ID>,<Name 2>;<ID 2>,..."`
+
+You can also provide those properties as flags to the `bootstrap` command, see the CLI's manual.
+
+Afterwards, the directory will be initialized with a configuration file that contains all the entered
+information, as well as additional metadata required for templates and more:
+
+```yaml
+# .assignments.yaml
+spec:
+  course: "Linear Algebra I"
+  group: "Group Alpha"
+  members:
+    - id: "123456"
+      name: "Max Mustermann"
+    - id: "AB123456"
+      name: "Erika Mustermann"
+    - id: "69420"
+      name: "Kim Took"
+  includes: []
+status:
+  assignment: 1
+```
+
+### Starting a new Assignment
+
+Calling
+
+```bash
+$ assignments generate
+```
+
+will create fresh scaffolding TeX file for the current assignment. If no further arguments are provided, the
+configuration file will be used for the current assignment's number. The CLI will prompt you for the due date
+of the assignment. If you chose to not provide one, or you simply don't know it, just press `Enter` to skip the field.
+
+You can also pass the assignment's number to the `generate` command, which will also update the status field in your
+`.assignments.yaml`.
+
+If you just want to generate a new assignment without the side-effects of incrementing the status counter in the config file,
+pass the `--no-increment` flag to `generate`.
+
+If you need to override an existing assignment, there's also a `--force` flag, but beware that any existing files are overridden,
+as the directory for the assignment is created from scratch.
+
+Then, proceed to edit your assignment. Documentation of the `csassignments` class can be found at <https://www.ctan.org/pkg/csassignments>.
+
+### Building Assignments
+
+Run
+
+```bash
+# Compile a specific assignment
+$ assignments build $ASSIGNMENT_NO
+# Compile *all* assignments
+$ assignments build --all
+# Compile an assignment and override any already existing artifacts
+$ assignments build --force $ASSIGNMENT_NO
 ```
 
 ## Tooling
