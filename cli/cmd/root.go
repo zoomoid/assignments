@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/zoomoid/assignments/v1/internal/config"
+	"github.com/zoomoid/assignments/v1/internal/context"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +31,6 @@ var rootCmd = &cobra.Command{
 
 var logger *zap.SugaredLogger
 var cwd string
-var configuration *config.Configuration
 
 func Execute() {
 	l, _ := zap.NewProduction()
@@ -47,6 +46,17 @@ func Execute() {
 
 	cwd = dir
 	logger = sugar
+
+	ctx := &context.AppContext{
+		Logger:        logger,
+		Cwd:           cwd,
+		Configuration: nil,
+	}
+
+	rootCmd.AddCommand(NewBootstrapCommand(ctx, nil))
+	rootCmd.AddCommand(NewGenerateCommand(ctx, nil))
+	rootCmd.AddCommand(NewBuildCommand(ctx, nil))
+	rootCmd.AddCommand(NewBundleCommand(ctx, nil))
 
 	if err := rootCmd.Execute(); err != nil {
 		logger.Fatal(err)
