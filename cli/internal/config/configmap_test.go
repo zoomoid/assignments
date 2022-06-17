@@ -19,6 +19,9 @@ spec:
       name: "Erika Mustermann"
     - id: "69420"
       name: "Kim Took"
+  includes:
+    - path: ../include.tex
+    - path: ../packages.tex
 status:
   assignment: 1`
 	os.WriteFile(configFile, []byte(config), 0644)
@@ -49,6 +52,13 @@ func TestWriteConfigMap(t *testing.T) {
 				Name: "Kim Took",
 				ID:   "69420",
 			}},
+			Includes: []Include{{
+				Path: "../includes.tex",
+			}, {
+				Path: "../packages.tex",
+			}, {
+				Path: "../custom-macros.tex",
+			}},
 		},
 		Status: &ConfigurationStatus{
 			Assignment: 1,
@@ -76,6 +86,13 @@ func TestWriteThenRead(t *testing.T) {
 			}, {
 				Name: "Kim Took",
 				ID:   "69420",
+			}},
+			Includes: []Include{{
+				Path: "../includes.tex",
+			}, {
+				Path: "../packages.tex",
+			}, {
+				Path: "../custom-macros.tex",
 			}},
 		},
 		Status: &ConfigurationStatus{
