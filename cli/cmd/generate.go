@@ -65,7 +65,8 @@ var (
 		setting .spec.template to a Golang template. You can use any Sprig 
 		template function in your custom template.
 		
-		The command creates a new directory from the current assignment number
+		The command creates a new directory from the current assignment number,
+		as well as all directories defined in the .spec.generate.create list.
 	`)
 )
 
@@ -135,24 +136,29 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 			sheetSource, err := template.GenerateAssignmentTemplate(&tpl, bindings)
 
 			if err != nil {
-				ctx.Logger.Errorf("Failed to template TeX source code, %v", err)
 				return err
 			}
 
+			// create the assignment's main directory
 			assignmentDirectory := fmt.Sprintf("assignment-%s", bindings.Sheet)
-
 			err = os.Mkdir(assignmentDirectory, os.ModeDir)
-
 			if err != nil {
-				ctx.Logger.Errorf("Failed to create assignment directory, %v", err)
 				return err
+			}
+
+			// create the additional directories defined in the spec
+			additionalDirectories := spec.GenerateOptions.Create
+			for _, dir := range additionalDirectories {
+				err = os.Mkdir(filepath.Join(assignmentDirectory, dir), os.ModeDir)
+				if err != nil {
+					return err
+				}
 			}
 
 			file := filepath.Join(assignmentDirectory, "assignment.tex")
 
 			err = os.WriteFile(file, []byte(sheetSource), 0644)
 			if err != nil {
-				ctx.Logger.Errorf("Failed to write to file, %v", err)
 				return err
 			}
 
