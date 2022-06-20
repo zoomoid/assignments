@@ -1,5 +1,6 @@
 package options
 
 const (
-	Tar string = "tar"
+	Tar  string = "tar"
+	Gzip string = "gzip"
 )
