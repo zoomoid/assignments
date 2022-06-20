@@ -92,7 +92,8 @@ func (r *RunnerContext) RunClean() error {
 	cmd.Dir = r.TargetDirectory
 
 	if err := cmd.Run(); err != nil {
-		r.Logger.Errorf("Cleaning up failed with %v", err)
+		r.Logger.Debugf("Cleaning up failed with %v", err)
+		return err
 	}
 	return nil
 }
@@ -134,7 +135,8 @@ func (r *RunnerContext) RunBuildMultiple() (*bytes.Buffer, error) {
 
 	combinedBuffer, e := combineBuffers(&outs)
 	if e != nil {
-		r.Logger.Errorf("Failed to concatenate output buffers, %v", e)
+		r.Logger.Debugf("Failed to concatenate output buffers, %v", e)
+		return nil, e
 	}
 
 	return combinedBuffer, err
@@ -168,7 +170,7 @@ func (r *RunnerContext) runBuild() (*bytes.Buffer, error) {
 	cmd.Dir = r.TargetDirectory
 
 	if err := cmd.Run(); err != nil {
-		r.Logger.Errorf("Failed to build with %v", err)
+		r.Logger.Debugf("Failed to build with %v", err)
 		return nil, err
 	}
 
