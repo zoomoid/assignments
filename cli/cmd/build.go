@@ -128,13 +128,13 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				runner, err := latexmk.New(ctx, &run)
 				if err != nil {
 					ctx.Logger.Errorf("failed to initialize runner for assignment %d in %s ", assignmentNo, run.Filename)
-					break
+					return err
 				}
 				_, err = runner.RunBuildMultiple()
 				if err != nil {
 					ctx.Logger.Errorf("run failed for assignment %d in %s, %v", assignmentNo, run.Filename, err)
 					ctx.Logger.Warnf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
-					break
+					return err
 				}
 
 				if !data.keep {
@@ -142,7 +142,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 					if err != nil {
 						ctx.Logger.Errorf("failed to clean up for assignment %d in %s, %v", assignmentNo, run.Filename, err)
 						ctx.Logger.Warnf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
-						break
+						return err
 					}
 				}
 
