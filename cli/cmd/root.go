@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/zoomoid/assignments/v1/cmd/options"
 	"github.com/zoomoid/assignments/v1/internal/context"
 	"go.uber.org/zap"
 )
@@ -25,18 +27,28 @@ var rootCmd = &cobra.Command{
 	Copyright (C) zoomoid, 2022`,
 
 	RunE: func(cmd *cobra.Command, args []string) error {
+		var l *zap.Logger
+		if verbose {
+			l, _ = zap.NewDevelopment()
+
+		} else {
+			l, _ = zap.NewProduction()
+		}
+		defer l.Sync()
+		sugar := l.Sugar()
+		logger = sugar
+
 		return fmt.Errorf("assignments requires a subcommand to run")
 	},
 }
 
 var logger *zap.SugaredLogger
 var cwd string
+var verbose bool
 
 func Execute() {
-	l, _ := zap.NewProduction()
 
-	defer l.Sync()
-	sugar := l.Sugar()
+	rootCmd.Flags().BoolVarP(&verbose, options.Verbose, options.VerboseShort, false, "Prints debug logs")
 
 	dir, err := os.Getwd()
 
@@ -45,7 +57,6 @@ func Execute() {
 	}
 
 	cwd = dir
-	logger = sugar
 
 	ctx := &context.AppContext{
 		Logger:        logger,
@@ -59,7 +70,6 @@ func Execute() {
 	rootCmd.AddCommand(NewBundleCommand(ctx, nil))
 
 	if err := rootCmd.Execute(); err != nil {
-		logger.Fatal(err)
-		os.Exit(1)
+		log.Fatalf("%v", err)
 	}
 }
