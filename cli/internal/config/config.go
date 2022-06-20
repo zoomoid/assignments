@@ -19,10 +19,12 @@ type ConfigurationSpec struct {
 	// Template allows users to provide their own assignment template
 	// deviating from the default LaTeX source template
 	Template string `json:"template,omitempty"`
+	// GenerateOptions define options configured statically for generating new assignment directories
+	GenerateOptions *GenerateOptions `json:"generate,omitempty"`
 	// BuildOptions are user options for the LaTeX build process
-	BuildOptions *BuildOptions `json:"building,omitempty"`
+	BuildOptions *BuildOptions `json:"build,omitempty"`
 	// BundleOptions are user options for bundling
-	BundleOptions *BundleOptions `json:"bundling,omitempty"`
+	BundleOptions *BundleOptions `json:"bundle,omitempty"`
 }
 
 type Include struct {
@@ -36,6 +38,13 @@ type BundleOptions struct {
 	Template string `json:"template"`
 	// Pass in arbitrary data for the template as a map
 	Data map[string]interface{} `json:"data"`
+	// Include defines a list of files to include in the bundle, supports globs
+	Include []string `json:"include,omitempty"`
+}
+
+type GenerateOptions struct {
+	// Create defines a list of bare directories to create when generating a new assignment
+	Create []string `json:"create,omitempty"`
 }
 
 type BuildOptions struct {
