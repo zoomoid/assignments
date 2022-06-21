@@ -8,10 +8,13 @@ import (
 )
 
 // ReadConfigMap reads in a config file an unmarshals it into a configuration struct
-func ReadConfigMap() (*Configuration, error) {
+func ReadConfigMap(path string) (*Configuration, error) {
+	if path == "" {
+		path = "."
+	}
 	viper.SetConfigFile(".assignments.yaml")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath(path)
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read config file, %v", err)
@@ -28,10 +31,13 @@ func ReadConfigMap() (*Configuration, error) {
 }
 
 // WriteConfigMap converts a configuration struct into a map for viper to write to the filesystem as config file
-func WriteConfigMap(config *Configuration) error {
+func WriteConfigMap(config *Configuration, path string) error {
+	if path == "" {
+		path = "."
+	}
 	viper.SetConfigFile(".assignments.yaml")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath(path)
 
 	marshalledConfig, err := json.Marshal(config)
 	if err != nil {

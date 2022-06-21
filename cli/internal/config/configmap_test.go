@@ -26,7 +26,7 @@ status:
   assignment: 1`
 	os.WriteFile(configFile, []byte(config), 0644)
 	defer os.Remove(configFile)
-	cfgFile, err := ReadConfigMap()
+	cfgFile, err := ReadConfigMap("")
 
 	if err != nil {
 		t.Fatalf("Failed to read in freshly created config file, %v", err)
@@ -65,7 +65,7 @@ func TestWriteConfigMap(t *testing.T) {
 		},
 	}
 	defer os.Remove(configFile)
-	err := WriteConfigMap(&config)
+	err := WriteConfigMap(&config, "")
 	if err != nil {
 		t.Fatalf("Failed to write configmap to file, %v", err)
 	}
@@ -100,12 +100,12 @@ func TestWriteThenRead(t *testing.T) {
 		},
 	}
 	defer os.Remove(configFile)
-	err := WriteConfigMap(&config)
+	err := WriteConfigMap(&config, "")
 	if err != nil {
 		t.Fatalf("Failed to write configmap to file, %v", err)
 	}
 
-	readConfig, err := ReadConfigMap()
+	readConfig, err := ReadConfigMap("")
 	if err != nil {
 		t.Fatalf("Failed to read configmap from file, %v", err)
 	}
