@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
-	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
 	"github.com/zoomoid/assignments/v1/internal/latexmk"
 	"github.com/zoomoid/assignments/v1/internal/util"
@@ -49,6 +49,7 @@ type buildData struct {
 	runs  uint
 	keep  bool
 	quiet bool
+	file  string
 }
 
 func newBuildData() *buildData {
@@ -58,6 +59,7 @@ func newBuildData() *buildData {
 		runs:  uint(3),
 		keep:  false,
 		quiet: false,
+		file:  "",
 	}
 }
 
@@ -66,13 +68,10 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 		data = newBuildData()
 	}
 
-	cfg, err := config.ReadConfigMap()
-
+	err := ctx.Read()
 	if err != nil {
-		ctx.Logger.Fatalf("Failed to read config file, %v", err)
+		ctx.Logger.Fatalf("Failed to read config file", err)
 	}
-
-	ctx.Configuration = cfg
 
 	buildCmd := &cobra.Command{
 		Use:   "build",
@@ -81,7 +80,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			runs := []latexmk.RunnerOptions{}
-			assignmentNo := cfg.Status.Assignment
+			assignmentNo := ctx.Configuration.Status.Assignment
 
 			if len(args) != 0 {
 				i, err := strconv.Atoi(args[0])
@@ -94,23 +93,16 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				return errors.New("cannot use --all flag with specific assignment")
 			}
 
-			artifactsDirectory := filepath.Join(ctx.Cwd, "dist")
+			if data.file != "" && len(args) > 0 {
+				return errors.New("cannot use -f flag with specific assignment")
+			}
 
-			if !data.all {
-				targetDirectory := filepath.Join(ctx.Cwd, fmt.Sprintf("assignment-%s", util.AddLeadingZero(assignmentNo)))
-				filename := filepath.Join(targetDirectory, "assignment.tex")
+			artifactsDirectory := filepath.Join(ctx.Root, "dist")
 
-				runs = []latexmk.RunnerOptions{{
-					TargetDirectory:    targetDirectory,
-					Filename:           filename,
-					Runs:               int(data.runs),
-					ArtifactsDirectory: artifactsDirectory,
-					Quiet:              data.quiet,
-				}}
-			} else {
-				directories, err := filepath.Glob(filepath.Join(ctx.Cwd, "assignment-*"))
+			if data.all {
+				directories, err := filepath.Glob(filepath.Join(ctx.Root, "assignment-*"))
 				if err != nil {
-					return fmt.Errorf("failed to glob directories in %s, %v", ctx.Cwd, err)
+					return fmt.Errorf("failed to glob directories in %s, %v", ctx.Root, err)
 				}
 				for _, dir := range directories {
 					filename := filepath.Join(dir, "assignment.tex")
@@ -122,6 +114,39 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 						Quiet:              data.quiet,
 					})
 				}
+			} else {
+				targetDirectory := filepath.Join(ctx.Root, fmt.Sprintf("assignment-%s", util.AddLeadingZero(assignmentNo)))
+				filename := filepath.Join(targetDirectory, "assignment.tex")
+				if data.file != "" {
+					absPath, err := filepath.Abs(data.file)
+					if err != nil {
+						return err
+					}
+
+					// override targetDirectory and filename conditionally, depending on whether the argument is a file or a directory
+					fi, err := os.Stat(absPath)
+					if err != nil {
+						return err
+					}
+
+					if fi.IsDir() {
+						// append default filename
+						targetDirectory = absPath
+						filename = filepath.Join(absPath, "assignment.tex")
+					} else {
+						// file is a regular file
+						filename = absPath
+						targetDirectory = filepath.Dir(absPath)
+					}
+				}
+
+				runs = []latexmk.RunnerOptions{{
+					TargetDirectory:    targetDirectory,
+					Filename:           filename,
+					Runs:               int(data.runs),
+					ArtifactsDirectory: artifactsDirectory,
+					Quiet:              data.quiet,
+				}}
 			}
 
 			for i, run := range runs {
@@ -165,4 +190,5 @@ func addBuildFlags(flags *pflag.FlagSet, data *buildData) {
 	flags.UintVarP(&data.runs, options.Runs, options.RunsShort, 3, "latexmk compiler runs")
 	flags.BoolVar(&data.keep, options.Keep, false, "Skip latexmk -C cleaning up all files in the source directory")
 	flags.BoolVar(&data.quiet, options.Quiet, false, "Suppress output from latexmk subprocesses")
+	flags.StringVarP(&data.file, options.File, options.FileShort, "", "Specify a file to build, will override any derived behaviour from the repository's configmap")
 }
