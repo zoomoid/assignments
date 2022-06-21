@@ -80,9 +80,8 @@ func NewBootstrapCommand(ctx *context.AppContext, data *bootstrapData) *cobra.Co
 
 			data.cfg.Spec.Includes = includes
 
-			config.WriteConfigMap(data.cfg)
-			return nil
-
+			ctx.Configuration = data.cfg
+			return ctx.Write()
 		},
 	}
 

@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
 	"github.com/zoomoid/assignments/v1/internal/bundle"
-	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
 	"github.com/zoomoid/assignments/v1/internal/util"
 )
@@ -70,20 +69,17 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 		data = newBundleData()
 	}
 
-	cfg, err := config.ReadConfigMap()
-
+	err := ctx.Read()
 	if err != nil {
-		ctx.Logger.Fatalf("Failed to read config file, %v", err)
+		ctx.Logger.Fatalf("Failed to read config file", err)
 	}
-
-	ctx.Configuration = cfg
 
 	bundleCommand := &cobra.Command{
 		Use:   "bundle",
 		Short: "Bundles an assignment with all additional files inside the assignment's directory",
 		Long:  bundleLongDescription,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			assignmentNo := cfg.Status.Assignment
+			assignmentNo := ctx.Configuration.Status.Assignment
 			if len(args) != 0 {
 				i, err := strconv.Atoi(args[0])
 				if err == nil {
@@ -122,7 +118,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 				assignment := fmt.Sprintf("assignments-%s.pdf", util.AddLeadingZero(assignmentNo))
 				files = append(files, assignment)
 			} else {
-				assignments, err := filepath.Glob(filepath.Join(ctx.Cwd, "dist", "assignment-*.pdf"))
+				assignments, err := filepath.Glob(filepath.Join(ctx.Root, "dist", "assignment-*.pdf"))
 				if err != nil {
 					return err
 				}
@@ -137,7 +133,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 					Template: template,
 					Data:     templateBindings,
 					Target:   filepath.Base(file),
-					Includes: cfg.Spec.BundleOptions.Include,
+					Includes: ctx.Configuration.Spec.BundleOptions.Include,
 				}
 				bundler, err := bundle.New(ctx, opts)
 				if err != nil {

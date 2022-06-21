@@ -80,9 +80,9 @@ type BundlerContext struct {
 
 // New makes a new bundling context from the context and the options passed as parameters
 func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, error) {
-	artifactsDirectory := filepath.Join(ctx.Cwd, "dist")
+	artifactsDirectory := filepath.Join(ctx.Root, "dist")
 	sourceDirectory := strings.ReplaceAll(options.Target, ".pdf", "")
-	base := filepath.Join(ctx.Cwd, sourceDirectory)
+	base := filepath.Join(ctx.Root, sourceDirectory)
 
 	additionalFiles := make([]string, 0)
 	for _, f := range options.Includes {

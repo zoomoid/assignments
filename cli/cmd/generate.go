@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
-	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
 	"github.com/zoomoid/assignments/v1/internal/template"
 	"github.com/zoomoid/assignments/v1/internal/util"
@@ -89,13 +88,10 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 		data = newGenerateData()
 	}
 
-	cfg, err := config.ReadConfigMap()
-
+	err := ctx.Read()
 	if err != nil {
 		ctx.Logger.Fatalf("Failed to read config file, %v", err)
 	}
-
-	ctx.Configuration = cfg
 
 	generateCmd := &cobra.Command{
 		Use:   "generate",
@@ -107,13 +103,13 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 				// update configuration status
 				i, err := strconv.Atoi(args[0])
 				if err == nil && !data.noIncrement {
-					cfg.Status.Assignment = uint32(i)
+					ctx.Configuration.Status.Assignment = uint32(i)
 				}
 			}
 
 			due := promptDueDate()
 
-			spec := cfg.Spec
+			spec := ctx.Configuration.Spec
 
 			var classPath string
 
@@ -127,7 +123,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 				ClassPath: classPath,
 				Course:    spec.Course,
 				Group:     spec.Group,
-				Sheet:     util.AddLeadingZero(cfg.Status.Assignment),
+				Sheet:     util.AddLeadingZero(ctx.Configuration.Status.Assignment),
 				Due:       due,
 				Members:   spec.Members,
 				Includes:  spec.Includes,
@@ -164,7 +160,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 
 			ctx.Logger.Infof("Generated assignment at %s", file)
 
-			defer config.WriteConfigMap(cfg)
+			defer ctx.Write()
 			return nil
 		},
 	}

@@ -2,7 +2,6 @@ package latexmk
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -48,11 +47,8 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 	}
 
 	if options.TargetDirectory == "" {
-		pwd, err := os.Getwd()
-		if err != nil {
-			return nil, errors.New("failed to determine current working directory for runner context creation")
-		}
-		runner.TargetDirectory = pwd
+		// when TargetDirectory is not specified, use the current working dir as target
+		runner.TargetDirectory = context.Cwd
 	} else {
 		runner.TargetDirectory = options.TargetDirectory
 	}
@@ -79,7 +75,7 @@ func NewMust(context *context.AppContext, options *RunnerOptions) *RunnerContext
 func (r *RunnerContext) RunClean() error {
 	out := &bytes.Buffer{}
 
-	r.Logger.Infof("Cleaning up using latexmk", "pwd", r.Cwd)
+	r.Logger.Infof("Cleaning up using latexmk", "pwd", r.Root)
 
 	cmd := exec.Command(defaultProgram, "-C")
 
@@ -180,7 +176,7 @@ func (r *RunnerContext) runBuild() (*bytes.Buffer, error) {
 // ExportArtifacts copies the PDF from compilation to another directory for exporting artifacts collectively
 func (r *RunnerContext) ExportArtifacts() error {
 	if r.ArtifactsDirectory == "" {
-		r.ArtifactsDirectory = filepath.Join(r.Cwd, "dist")
+		r.ArtifactsDirectory = filepath.Join(r.Root, "dist")
 	}
 
 	if _, err := os.Stat(r.ArtifactsDirectory); os.IsNotExist(err) {
