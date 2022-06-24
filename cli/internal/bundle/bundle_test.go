@@ -110,7 +110,8 @@ func TestSyntheticTarBundling(t *testing.T) {
 }
 
 func TestSynthenticTarGzipBundling(t *testing.T) {
-	out, err := os.Create(filepath.Join(t.TempDir(), "output.tar.gz"))
+	dir := t.TempDir()
+	out, err := os.Create(filepath.Join(dir, "output.tar.gz"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,8 +168,8 @@ func TestSynthenticTarGzipBundling(t *testing.T) {
 }
 
 func TestSynthenticZipBundling(t *testing.T) {
-	// dir := t.TempDir()
-	dir := "."
+	dir := t.TempDir()
+	// dir := "."
 	out, err := os.Create(filepath.Join(dir, "output.zip"))
 	if err != nil {
 		t.Fatal(err)
