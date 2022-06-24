@@ -137,7 +137,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 
 			// create the assignment's main directory
 			assignmentDirectory := fmt.Sprintf("assignment-%s", bindings.Sheet)
-			err = os.Mkdir(assignmentDirectory, os.ModeDir)
+			err = os.Mkdir(assignmentDirectory, 0777)
 			if err != nil {
 				return err
 			}
@@ -145,7 +145,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 			// create the additional directories defined in the spec
 			additionalDirectories := spec.GenerateOptions.Create
 			for _, dir := range additionalDirectories {
-				err = os.Mkdir(filepath.Join(assignmentDirectory, dir), os.ModeDir)
+				err = os.Mkdir(filepath.Join(assignmentDirectory, dir), 0777)
 				if err != nil {
 					return err
 				}
