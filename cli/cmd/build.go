@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
@@ -46,7 +47,6 @@ var (
 type buildData struct {
 	force bool
 	all   bool
-	runs  uint
 	keep  bool
 	quiet bool
 	file  string
@@ -56,7 +56,6 @@ func newBuildData() *buildData {
 	return &buildData{
 		force: false,
 		all:   false,
-		runs:  uint(3),
 		keep:  false,
 		quiet: false,
 		file:  "",
@@ -109,7 +108,6 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 					runs = append(runs, latexmk.RunnerOptions{
 						TargetDirectory:    dir,
 						Filename:           filename,
-						Runs:               int(data.runs),
 						ArtifactsDirectory: artifactsDirectory,
 						Quiet:              data.quiet,
 					})
@@ -143,19 +141,19 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				runs = []latexmk.RunnerOptions{{
 					TargetDirectory:    targetDirectory,
 					Filename:           filename,
-					Runs:               int(data.runs),
 					ArtifactsDirectory: artifactsDirectory,
 					Quiet:              data.quiet,
 				}}
 			}
 
-			for i, run := range runs {
+			startTime := time.Now()
+			for _, run := range runs {
 				runner, err := latexmk.New(ctx, &run)
 				if err != nil {
 					ctx.Logger.Errorf("failed to initialize runner for assignment %d in %s ", assignmentNo, run.Filename)
 					return err
 				}
-				_, err = runner.RunBuildMultiple()
+				err = runner.Build().Run()
 				if err != nil {
 					ctx.Logger.Errorf("run failed for assignment %d in %s, %v", assignmentNo, run.Filename, err)
 					ctx.Logger.Warnf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
@@ -163,17 +161,15 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				}
 
 				if !data.keep {
-					err = runner.RunClean()
+					err = runner.Clean().Run()
 					if err != nil {
 						ctx.Logger.Errorf("failed to clean up for assignment %d in %s, %v", assignmentNo, run.Filename, err)
 						ctx.Logger.Warnf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
 						return err
 					}
 				}
-
-				ctx.Logger.Infof("Finished building %s [%d/%d]", run.Filename, i+1, len(runs))
 			}
-
+			ctx.Logger.Debug("Finished all build jobs successfully", "jobCount", len(runs), "duration", time.Since(startTime))
 			return nil
 		},
 	}
@@ -187,7 +183,6 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 func addBuildFlags(flags *pflag.FlagSet, data *buildData) {
 	flags.BoolVarP(&data.force, options.Force, options.ForceShort, false, "Override any existing assignments with the same name")
 	flags.BoolVarP(&data.all, options.All, options.AllShort, false, "Build all assignments in assignment-*/")
-	flags.UintVarP(&data.runs, options.Runs, options.RunsShort, 3, "latexmk compiler runs")
 	flags.BoolVar(&data.keep, options.Keep, false, "Skip latexmk -C cleaning up all files in the source directory")
 	flags.BoolVar(&data.quiet, options.Quiet, false, "Suppress output from latexmk subprocesses")
 	flags.StringVarP(&data.file, options.File, options.FileShort, "", "Specify a file to build, will override any derived behaviour from the repository's configmap")
