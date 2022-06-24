@@ -59,6 +59,15 @@ func (r *Recipe) Clone() Recipe {
 	}
 }
 
+func (g *GenerateOptions) Clone() *GenerateOptions {
+	o := []string{}
+	o = append(o, g.Create...)
+
+	return &GenerateOptions{
+		Create: o,
+	}
+}
+
 func (b *BuildOptions) Clone() *BuildOptions {
 	nr := []Recipe{}
 	for _, r := range b.Recipe {

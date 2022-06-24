@@ -29,6 +29,8 @@ type ConfigurationSpec struct {
 
 type Include struct {
 	// Path defines a relative path for additional files to include in a TeX template
+	// They are included as literals in the template, thus should be relative to
+	// the assignment TeX file
 	Path string `json:"path"`
 }
 
@@ -47,9 +49,18 @@ type GenerateOptions struct {
 	Create []string `json:"create,omitempty"`
 }
 
+func (g *GenerateOptions) Clone() *GenerateOptions {
+	o := []string{}
+	o = append(o, g.Create...)
+
+	return &GenerateOptions{
+		Create: o,
+	}
+}
+
 type BuildOptions struct {
 	// Recipe is the specification of a LaTeX compiler program and its arguments
-	Recipe *Recipe `json:"recipe,omitempty"`
+	Recipe []Recipe `json:"recipe,omitempty"`
 }
 
 type Recipe struct {
