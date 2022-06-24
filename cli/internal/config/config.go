@@ -49,15 +49,6 @@ type GenerateOptions struct {
 	Create []string `json:"create,omitempty"`
 }
 
-func (g *GenerateOptions) Clone() *GenerateOptions {
-	o := []string{}
-	o = append(o, g.Create...)
-
-	return &GenerateOptions{
-		Create: o,
-	}
-}
-
 type BuildOptions struct {
 	// Recipe is the specification of a LaTeX compiler program and its arguments
 	Recipe []Recipe `json:"recipe,omitempty"`
