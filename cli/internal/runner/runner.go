@@ -1,10 +1,11 @@
-package latexmk
+package runner
 
 import (
 	"bufio"
 	"bytes"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/zoomoid/assignments/v1/internal/context"
 )
@@ -24,9 +25,14 @@ type RunnerOptions struct {
 }
 
 type RunnerContext struct {
-	context.AppContext
-	RunnerOptions
-	Commands []*exec.Cmd
+	*context.AppContext
+	options            *RunnerOptions
+	filename           string
+	quiet              bool
+	overrideArtifacts  bool
+	targetDirectory    string
+	artifactsDirectory string
+	Commands           []*exec.Cmd
 }
 
 // Job runners should implement this interface, i.e.,
@@ -43,20 +49,29 @@ var (
 // New creates a new runner context from the given parameters and applies sensible defaults
 func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, error) {
 	runner := &RunnerContext{
-		AppContext: *context,
+		AppContext: context,
+		options:    options,
 	}
 
 	if options.TargetDirectory == "" {
 		// when TargetDirectory is not specified, use the current working dir as target
-		runner.TargetDirectory = context.Cwd
+		runner.targetDirectory = context.Cwd
 	} else {
-		runner.TargetDirectory = options.TargetDirectory
+		if filepath.IsAbs(options.TargetDirectory) {
+			runner.targetDirectory = options.TargetDirectory
+		} else {
+			runner.targetDirectory = filepath.Join(context.Root, options.TargetDirectory)
+		}
+	}
+
+	if options.ArtifactsDirectory == "" {
+		runner.artifactsDirectory = filepath.Join(context.Root, "dist")
 	}
 
 	if options.Filename == "" {
-		runner.Filename = options.Filename
+		runner.filename = options.Filename
 	} else {
-		runner.Filename = "assignment.tex"
+		runner.filename = "assignment.tex"
 	}
 
 	return runner, nil
@@ -82,7 +97,7 @@ func (b *RunnerContext) Clone() *RunnerContext {
 		destCmd.Dir = srcCmd.Dir
 		out := &bytes.Buffer{}
 
-		if b.Quiet {
+		if b.quiet {
 			sink := bufio.NewWriter(out)
 			destCmd.Stdout = sink
 		} else {
@@ -91,18 +106,17 @@ func (b *RunnerContext) Clone() *RunnerContext {
 		cmds = append(cmds, destCmd)
 	}
 	return &RunnerContext{
-		RunnerOptions: RunnerOptions{
-			TargetDirectory:    b.TargetDirectory,
-			Filename:           b.Filename,
-			ArtifactsDirectory: b.ArtifactsDirectory,
-			Quiet:              b.Quiet,
-			OverrideArtifacts:  b.OverrideArtifacts,
-		},
-		Commands: cmds,
-		AppContext: context.AppContext{
+		targetDirectory:    b.TargetDirectory(),
+		filename:           b.Filename(),
+		artifactsDirectory: b.ArtifactsDirectory(),
+		quiet:              b.Quiet(),
+		overrideArtifacts:  b.OverrideArtifacts(),
+		Commands:           cmds,
+		AppContext: &context.AppContext{
 			Cwd:           b.Cwd,
 			Root:          b.Root,
 			Configuration: b.Configuration.Clone(),
+			Logger:        b.Logger,
 		},
 	}
 }
@@ -113,4 +127,46 @@ func (r *RunnerContext) Build() *builder {
 
 func (r *RunnerContext) Clean() *cleaner {
 	return &cleaner{RunnerContext: r}
+}
+
+func (r *RunnerContext) ArtifactsDirectory() string {
+	return r.artifactsDirectory
+}
+
+func (r *RunnerContext) TargetDirectory() string {
+	return r.targetDirectory
+}
+
+func (r *RunnerContext) Filename() string {
+	return r.filename
+}
+
+func (r *RunnerContext) Quiet() bool {
+	return r.quiet
+}
+
+func (r *RunnerContext) OverrideArtifacts() bool {
+	return r.overrideArtifacts
+}
+
+func (r *RunnerContext) SetTargetDirectory(targetDirectory string) {
+	if filepath.IsAbs(targetDirectory) {
+		r.targetDirectory = targetDirectory
+	} else {
+		r.targetDirectory = filepath.Join(r.Root, r.options.TargetDirectory)
+	}
+}
+
+func (r *RunnerContext) SetRoot(newRoot string) {
+	r.Root = newRoot
+
+	// update root-dependent fields for runner
+	if r.options.TargetDirectory != "" {
+		if !filepath.IsAbs(r.options.TargetDirectory) {
+			r.targetDirectory = filepath.Join(r.Root, r.options.TargetDirectory)
+		}
+	}
+	if r.options.ArtifactsDirectory == "" {
+		r.artifactsDirectory = filepath.Join(r.Root, "dist")
+	}
 }

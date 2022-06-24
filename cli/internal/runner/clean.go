@@ -1,4 +1,4 @@
-package latexmk
+package runner
 
 import (
 	"bytes"
@@ -15,13 +15,13 @@ func (c *cleaner) makeCleanCmd() error {
 
 	cmd := exec.Command(defaultProgram, "-C")
 
-	if c.Quiet {
+	if c.quiet {
 		cmd.Stdout = out
 	} else {
 		cmd.Stdout = os.Stdout
 	}
 
-	cmd.Dir = c.TargetDirectory
+	cmd.Dir = c.targetDirectory
 	c.Commands = []*exec.Cmd{cmd}
 	return nil
 }
@@ -29,7 +29,7 @@ func (c *cleaner) makeCleanCmd() error {
 var _ Runner = &cleaner{}
 
 func (c *cleaner) Run() error {
-	c.Logger.Debug("[runner/clean] Cleaning up using latexmk", "pwd", c.Root)
+	c.Logger.Debug("[runner/clean] Cleaning up %s using latexmk", c.targetDirectory)
 
 	err := c.makeCleanCmd()
 	if err != nil {
@@ -40,6 +40,6 @@ func (c *cleaner) Run() error {
 			return err
 		}
 	}
-	c.Logger.Debug("[runner/clean] Finished cleanup with latexmk", "directory", c.TargetDirectory)
+	c.Logger.Debug("[runner/clean] Finished cleanup %s with latexmk", c.targetDirectory)
 	return nil
 }
