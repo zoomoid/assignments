@@ -18,7 +18,7 @@ import (
 var (
 	rootLongDescription = dedent.Dedent(`
 		Manangement CLI for doing university assignments with and around
-		the "csassignments" LaTeX class. 
+		the "csassignments" LaTeX class.
 	`)
 )
 
