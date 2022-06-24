@@ -1,14 +1,35 @@
 package config
 
 func (c *ConfigurationSpec) Clone() *ConfigurationSpec {
-	nm := []GroupMember{}
-	for _, m := range c.Members {
-		nm = append(nm, m.Clone())
+	nm := c.Members
+	if nm != nil {
+		nm = []GroupMember{}
+		for _, m := range c.Members {
+			nm = append(nm, m.Clone())
+		}
 	}
 
-	ni := []Include{}
-	for _, i := range c.Includes {
-		ni = append(ni, i.Clone())
+	ni := c.Includes
+	if ni != nil {
+		ni = []Include{}
+		for _, i := range c.Includes {
+			ni = append(ni, i.Clone())
+		}
+	}
+
+	generateOptions := c.GenerateOptions
+	if generateOptions != nil {
+		generateOptions = c.GenerateOptions.Clone()
+	}
+
+	buildOptions := c.BuildOptions
+	if buildOptions != nil {
+		buildOptions = c.BuildOptions.Clone()
+	}
+
+	bundleOptions := c.BundleOptions
+	if bundleOptions != nil {
+		bundleOptions = c.BundleOptions.Clone()
 	}
 
 	return &ConfigurationSpec{
@@ -17,9 +38,9 @@ func (c *ConfigurationSpec) Clone() *ConfigurationSpec {
 		Template:        c.Template,
 		Members:         nm,
 		Includes:        ni,
-		GenerateOptions: c.GenerateOptions.Clone(),
-		BuildOptions:    c.BuildOptions.Clone(),
-		BundleOptions:   c.BundleOptions.Clone(),
+		GenerateOptions: generateOptions,
+		BuildOptions:    buildOptions,
+		BundleOptions:   bundleOptions,
 	}
 }
 
