@@ -21,10 +21,13 @@ type builder struct {
 	*RunnerContext
 }
 
+// Compile-time type checking of Runner spec
 var _ Runner = &builder{}
 
-func (b *builder) makeBuildCommands() error {
-	recipe := b.Configuration.Spec.BuildOptions.Recipe
+// MakeCommand implements the Runner spec in terms of transforming a given recipe into a
+// slice of exec.Cmd, or using the default recipe
+func (b *builder) MakeCommand() ([]*exec.Cmd, error) {
+	recipe := b.configuration.Spec.BuildOptions.Recipe
 
 	if len(recipe) == 0 {
 		// use the default latexmk recipe
@@ -39,7 +42,7 @@ func (b *builder) makeBuildCommands() error {
 	cmds := []*exec.Cmd{}
 	for i, tool := range recipe {
 		if tool.Command == "" {
-			return fmt.Errorf("failed to make build commands, missing program in recipe step %d", i)
+			return nil, fmt.Errorf("failed to make build commands, missing program in recipe step %d", i)
 		}
 		program := tool.Command
 		args := []string{}
@@ -62,46 +65,49 @@ func (b *builder) makeBuildCommands() error {
 		cmds = append(cmds, cmd)
 	}
 
-	b.Commands = cmds
-	return nil
+	return cmds, nil
 }
 
+// Run implements the Runner specification for running a set of commands in terms of building
 func (b *builder) Run() error {
 	startTime := time.Now()
-	b.Logger.Debugf("[runner/build] Starting builder from %s on %s", b.Root, filepath.Join(b.targetDirectory, b.filename))
-	err := b.makeBuildCommands()
+	b.logger.Debugf("[runner/build] Started building %s", filepath.Join(b.TargetDirectory(), b.filename))
+
+	cmds, err := b.MakeCommand()
 	if err != nil {
 		return err
 	}
-	for _, cmd := range b.Commands {
+
+	b.Commands = cmds
+
+	for i, cmd := range b.Commands {
+		if cmd == nil {
+			return fmt.Errorf("command %d is nil", i)
+		}
 		if err := cmd.Run(); err != nil {
 			return err
 		}
 	}
-	b.Logger.Debugf("[runner/build] Finished building %s in %v", b.Filename, time.Since(startTime))
+	b.logger.Debugf("[runner/build] Finished building %s in %v", filepath.Join(b.TargetDirectory(), b.filename), time.Since(startTime))
 
 	exportTime := time.Now()
-	b.Logger.Debugf("[runner/export] Starting export", "pwd", b.Root, "file", b.filename)
+	b.logger.Debugf("[runner/export] Starting export of %s", filepath.Join(b.TargetDirectory(), b.filename))
 	dest, err := b.exportArtifacts()
 	if err != nil {
 		return err
 	}
-	b.Logger.Debugf("[runner/export] Finished exporting from %s to %s in %v", filepath.Join(b.targetDirectory, b.filename), dest, time.Since(exportTime))
+	b.logger.Debugf("[runner/export] Finished exporting from %s to %s in %v", filepath.Join(b.targetDirectory, b.filename), dest, time.Since(exportTime))
 	return nil
 }
 
 // exportArtifacts copies the PDF from compilation to another directory for exporting artifacts collectively
 func (b *builder) exportArtifacts() (string, error) {
-	if b.artifactsDirectory == "" {
-		b.artifactsDirectory = filepath.Join(b.Root, "dist")
-	}
-
 	err := b.makeArtifactsDirectory()
 	if err != nil {
 		return "", err
 	}
 
-	d := filepath.Join(b.artifactsDirectory)
+	d := b.ArtifactsDirectory()
 
 	err = os.MkdirAll(d, 0777) // returns nil if d already exists
 	if err != nil {
@@ -110,10 +116,10 @@ func (b *builder) exportArtifacts() (string, error) {
 
 	ai, err := b.assignmentNumber()
 	if err != nil {
-		return "", fmt.Errorf("failed to derive assignment number from target directory, got %s", b.targetDirectory)
+		return "", fmt.Errorf("failed to derive assignment number from target directory, got %s", b.ArtifactsDirectory())
 	}
 
-	srcPath := filepath.Join(b.targetDirectory, b.filename)
+	srcPath := filepath.Join(b.ArtifactsDirectory(), b.filename)
 	destPath := filepath.Join(d, fmt.Sprintf("assignment-%s.pdf", ai))
 
 	if _, err := os.Stat(destPath); !b.overrideArtifacts && err == nil {
@@ -136,7 +142,7 @@ func (b *builder) exportArtifacts() (string, error) {
 		return "", err
 	}
 
-	b.Logger.Debugf("[runner/export] Copied artifact PDF from %s to %s", srcPath, destPath)
+	b.logger.Debugf("[runner/export] Copied artifact PDF from %s to %s", srcPath, destPath)
 
 	pdfPath, err := filepath.Abs(destPath)
 	if err != nil {
@@ -147,21 +153,27 @@ func (b *builder) exportArtifacts() (string, error) {
 	return pdfPath, nil
 }
 
+// makeArtifactsDirectory ensures that the directory to copy artifact files to exists so the file
+// descriptors can safely be created
 func (b *builder) makeArtifactsDirectory() error {
-	if _, err := os.Stat(b.artifactsDirectory); errors.Is(err, os.ErrNotExist) {
+	d := b.ArtifactsDirectory()
+	if _, err := os.Stat(d); errors.Is(err, os.ErrNotExist) {
 		// artifacts directory does not exist yet, try to create it
-		err = os.MkdirAll(b.artifactsDirectory, 0777)
+		err = os.MkdirAll(d, 0777)
 		if err != nil {
 			return err
 		}
-		b.Logger.Debugf("[runner/export] Created artifacts directory %s", b.artifactsDirectory)
+		b.logger.Debugf("[runner/export] Created artifacts directory %s", d)
+		return nil
 	}
-	b.Logger.Debugf("[runner/export] Artifacts directory %s already exists, skipping creation...", b.artifactsDirectory)
+	b.logger.Debugf("[runner/export] Artifacts directory %s already exists, skipping creation...", d)
 	return nil
 }
 
+// assignmentNumber extracts the assignment number (with a leading zero already, thus string-typed)
+// from the target directory's name
 func (b *builder) assignmentNumber() (string, error) {
-	s := filepath.Base(b.targetDirectory)
+	s := filepath.Base(b.TargetDirectory())
 	s = strings.ReplaceAll(s, "assignment-", "")
 	s = strings.ReplaceAll(s, ".pdf", "")
 	i, err := strconv.Atoi(s)

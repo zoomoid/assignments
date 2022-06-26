@@ -2,6 +2,7 @@ package runner
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 )
@@ -10,7 +11,12 @@ type cleaner struct {
 	*RunnerContext
 }
 
-func (c *cleaner) makeCleanCmd() error {
+// Compile-time type checking of Runner spec
+var _ Runner = &cleaner{}
+
+// MakeClean implements the Runner spec in terms of making a singleton exec.Cmd using
+// latexmk to cleanup the working directory of the LaTeX compiler
+func (c *cleaner) MakeCommand() ([]*exec.Cmd, error) {
 	out := &bytes.Buffer{}
 
 	cmd := exec.Command(defaultProgram, "-C")
@@ -21,25 +27,29 @@ func (c *cleaner) makeCleanCmd() error {
 		cmd.Stdout = os.Stdout
 	}
 
-	cmd.Dir = c.targetDirectory
-	c.Commands = []*exec.Cmd{cmd}
-	return nil
+	cmd.Dir = c.TargetDirectory()
+	return []*exec.Cmd{cmd}, nil
 }
 
-var _ Runner = &cleaner{}
-
+// Run implements the Runner spec in terms of running the cleanup command in shell
 func (c *cleaner) Run() error {
-	c.Logger.Debug("[runner/clean] Cleaning up %s using latexmk", c.targetDirectory)
+	c.logger.Debug("[runner/clean] Cleaning up %s using latexmk", c.TargetDirectory())
 
-	err := c.makeCleanCmd()
+	cmds, err := c.MakeCommand()
 	if err != nil {
 		return err
 	}
-	for _, cmd := range c.Commands {
+
+	c.Commands = cmds
+
+	for i, cmd := range c.Commands {
+		if cmd == nil {
+			return fmt.Errorf("command %d is nil", i)
+		}
 		if err := cmd.Run(); err != nil {
 			return err
 		}
 	}
-	c.Logger.Debug("[runner/clean] Finished cleanup %s with latexmk", c.targetDirectory)
+	c.logger.Debug("[runner/clean] Finished cleanup %s with latexmk", c.TargetDirectory())
 	return nil
 }
