@@ -7,7 +7,9 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
+	"go.uber.org/zap"
 )
 
 // RunnerOptions struct to carry configuration for the latexmk runs
@@ -16,8 +18,6 @@ type RunnerOptions struct {
 	TargetDirectory string
 	// TeX source file to compile, defaults to "assignment.tex"
 	Filename string
-	// ArtifactsDirectory to copy to, defaults to "$PWD/dist"
-	ArtifactsDirectory string
 	// Quiet makes the latexmk run capture the output inside a buffer instead of piping to stdout
 	Quiet bool
 	// OverrideArtifacts makes the builder override any existing artifacts
@@ -25,7 +25,10 @@ type RunnerOptions struct {
 }
 
 type RunnerContext struct {
-	*context.AppContext
+	root               string
+	cwd                string
+	configuration      *config.Configuration
+	logger             *zap.SugaredLogger
 	options            *RunnerOptions
 	filename           string
 	quiet              bool
@@ -38,6 +41,7 @@ type RunnerContext struct {
 // Job runners should implement this interface, i.e.,
 // the clean job and the build job implement a shared interface
 type Runner interface {
+	MakeCommand() ([]*exec.Cmd, error)
 	Run() error
 }
 
@@ -48,9 +52,15 @@ var (
 
 // New creates a new runner context from the given parameters and applies sensible defaults
 func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, error) {
+	// clone the app context for the runner context to not mutate the application context's
+	// state with setters on the runner
+	runnerCtx := context.Clone()
 	runner := &RunnerContext{
-		AppContext: context,
-		options:    options,
+		options:       options,
+		root:          runnerCtx.Root,
+		cwd:           runnerCtx.Cwd,
+		configuration: runnerCtx.Configuration,
+		logger:        runnerCtx.Logger,
 	}
 
 	if options.TargetDirectory == "" {
@@ -64,9 +74,7 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 		}
 	}
 
-	if options.ArtifactsDirectory == "" {
-		runner.artifactsDirectory = filepath.Join(context.Root, "dist")
-	}
+	runner.artifactsDirectory = filepath.Join(context.Root, "dist")
 
 	if options.Filename == "" {
 		runner.filename = options.Filename
@@ -112,29 +120,37 @@ func (b *RunnerContext) Clone() *RunnerContext {
 		quiet:              b.Quiet(),
 		overrideArtifacts:  b.OverrideArtifacts(),
 		Commands:           cmds,
-		AppContext: &context.AppContext{
-			Cwd:           b.Cwd,
-			Root:          b.Root,
-			Configuration: b.Configuration.Clone(),
-			Logger:        b.Logger,
-		},
+		cwd:                b.cwd,
+		root:               b.root,
+		configuration:      b.configuration.Clone(),
+		logger:             b.logger, // this is not actually cloned
 	}
 }
 
 func (r *RunnerContext) Build() *builder {
-	return &builder{RunnerContext: r}
+	b := &builder{RunnerContext: r}
+	return b
 }
 
 func (r *RunnerContext) Clean() *cleaner {
-	return &cleaner{RunnerContext: r}
+	c := &cleaner{RunnerContext: r}
+	return c
 }
 
 func (r *RunnerContext) ArtifactsDirectory() string {
-	return r.artifactsDirectory
+	if filepath.IsAbs(r.artifactsDirectory) {
+		return r.artifactsDirectory
+	} else {
+		return filepath.Join(r.root, r.artifactsDirectory)
+	}
 }
 
 func (r *RunnerContext) TargetDirectory() string {
-	return r.targetDirectory
+	if filepath.IsAbs(r.targetDirectory) {
+		return r.targetDirectory
+	} else {
+		return filepath.Join(r.root, r.targetDirectory)
+	}
 }
 
 func (r *RunnerContext) Filename() string {
@@ -150,23 +166,19 @@ func (r *RunnerContext) OverrideArtifacts() bool {
 }
 
 func (r *RunnerContext) SetTargetDirectory(targetDirectory string) {
-	if filepath.IsAbs(targetDirectory) {
-		r.targetDirectory = targetDirectory
-	} else {
-		r.targetDirectory = filepath.Join(r.Root, r.options.TargetDirectory)
+	if targetDirectory == "" {
+		targetDirectory = r.cwd
 	}
+	r.targetDirectory = targetDirectory
+}
+
+func (r *RunnerContext) SetArtifactsDirectory(artifactsDirectory string) {
+	if artifactsDirectory == "" {
+		artifactsDirectory = "dist"
+	}
+	r.artifactsDirectory = artifactsDirectory
 }
 
 func (r *RunnerContext) SetRoot(newRoot string) {
-	r.Root = newRoot
-
-	// update root-dependent fields for runner
-	if r.options.TargetDirectory != "" {
-		if !filepath.IsAbs(r.options.TargetDirectory) {
-			r.targetDirectory = filepath.Join(r.Root, r.options.TargetDirectory)
-		}
-	}
-	if r.options.ArtifactsDirectory == "" {
-		r.artifactsDirectory = filepath.Join(r.Root, "dist")
-	}
+	r.root = newRoot
 }
