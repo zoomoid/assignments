@@ -27,3 +27,14 @@ func (c *AppContext) Write() error {
 	err := config.WriteConfigMap(c.Configuration, c.Root)
 	return err
 }
+
+// Clone copies all fields except the logger into a fresh context and returns a reference to it
+func (c *AppContext) Clone() *AppContext {
+	nc := &AppContext{
+		Cwd:           c.Cwd,
+		Root:          c.Root,
+		Configuration: c.Configuration.Clone(),
+		Logger:        c.Logger, // don't actually clone the zap logger, this is fine to be aliased by all contexts
+	}
+	return nc
+}
