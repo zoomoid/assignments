@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/lithammer/dedent"
@@ -98,13 +99,13 @@ func makeAppContext(root string) (*context.AppContext, error) {
 }
 
 func makeSourceFile(root string) (string, error) {
-	dirName := filepath.Join(root, fmt.Sprintf("assignment-%s", util.AddLeadingZero(cfg.Status.Assignment)))
-	err := os.Mkdir(dirName, 0777)
+	dirName := fmt.Sprintf("assignment-%s", util.AddLeadingZero(cfg.Status.Assignment))
+	err := os.Mkdir(filepath.Join(root, dirName), 0777)
 	if err != nil {
 		return "", err
 	}
 
-	fn := filepath.Join(dirName, "assignment.tex")
+	fn := filepath.Join(root, dirName, "assignment.tex")
 	f, err := os.Create(fn)
 	if err != nil {
 		return "", err
@@ -119,248 +120,79 @@ func makeSourceFile(root string) (string, error) {
 	return dirName, nil
 }
 
-func TestBuildRunner(t *testing.T) {
+func TestRunner(t *testing.T) {
 	workingDirectory := t.TempDir()
-
 	targetDirectory, err := makeSourceFile(workingDirectory)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	ctx, err := makeAppContext(workingDirectory)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
 	testRunner, err := New(ctx, &RunnerOptions{
 		TargetDirectory:   targetDirectory,
-		OverrideArtifacts: true,
+		OverrideArtifacts: false,
 		Quiet:             false,
 	})
 	if err != nil {
 		t.Error(err)
+		return
 	}
 
-	t.Run("assignmentNumber", func(t *testing.T) {
-		r := testRunner.Clone().Build()
-		t.Run("TargetDirectory=assignment", func(t *testing.T) {
-			r.SetTargetDirectory("assignment")
-			i, err := r.assignmentNumber()
-			if err != nil {
-				// this is to be expected
-				return
-			}
-			t.Error(fmt.Errorf("found assignment number where there shouldn't have, found %s, saw %s ", i, r.TargetDirectory))
-		})
-		t.Run("TargetDirectory=assignment-03", func(t *testing.T) {
-			r.SetTargetDirectory("assignment-03")
-			s, err := r.assignmentNumber()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			if s != "03" {
-				t.Error(fmt.Errorf("Expected '%s', found '%s'", "03", s))
-			}
-		})
-		t.Run("TargetDirectory=assignment-13", func(t *testing.T) {
-			r.SetTargetDirectory("assignment-13")
-			s, err := r.assignmentNumber()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			if s != "13" {
-				t.Error(fmt.Errorf("Expected '%s', found '%s'", "13", s))
-			}
-		})
-		t.Run("TargetDirectory=assignment-3", func(t *testing.T) {
-			r.SetTargetDirectory("assignment-3")
-			s, err := r.assignmentNumber()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			if s != "03" {
-				t.Error(fmt.Errorf("Expected '%s', found '%s'", "03", s))
-			}
-		})
-	})
-	t.Run("makeBuildCommand", func(t *testing.T) {
-		r := testRunner.Clone().Build()
-		t.Run("predefined recipe", func(t *testing.T) {
-			err = r.makeBuildCommands()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			if len(r.Commands) != 1 {
-				t.Error(fmt.Errorf("r.Commands is of length %d, expected %d ", len(r.Commands), 1))
-				return
-			}
-			cmd := r.Commands[0]
-			program := r.Configuration.Spec.BuildOptions.Recipe[0].Command
-			if cmd.Args[0] != program {
-				t.Error(fmt.Errorf("cmd runs %s, expected %s", cmd.Args[0], program))
-				return
-			}
-		})
-		t.Run("empty recipe", func(t *testing.T) {
-			r.Configuration.Spec.BuildOptions.Recipe = []config.Recipe{}
-			err = r.makeBuildCommands()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			// defaults to single latexmk run
-			if len(r.Commands) != 1 {
-				t.Error(fmt.Errorf("r.Commands is of length %d, expected %d ", len(r.Commands), 1))
-				return
-			}
-
-			cmd := r.Commands[0]
-			if cmd.Args[0] != defaultProgram {
-				t.Error(fmt.Errorf("cmd runs %s, expected %s", cmd.Args[0], defaultProgram))
-				return
-			}
-		})
-		t.Run("pdflatex -> bibtex -> pdflatex recipe", func(t *testing.T) {
-			r.Configuration.Spec.BuildOptions.Recipe = []config.Recipe{{
-				Command: "pdflatex",
-				Args:    []string{"-interaction=nonstopmode", "-file-line-error"},
-			}, {
-				Command: "bibtex",
-			}, {
-				Command: "pdflatex",
-				Args:    []string{"-interaction=nonstopmode", "-file-line-error"},
-			}}
-			err = r.makeBuildCommands()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			// defaults to single latexmk run
-			if len(r.Commands) != len(r.Configuration.Spec.BuildOptions.Recipe) {
-				t.Error(fmt.Errorf("r.Commands is of length %d, expected %d ", len(r.Commands), len(r.Configuration.Spec.BuildOptions.Recipe)))
-				return
-			}
-			cmd := r.Commands[0]
-			expected := r.Configuration.Spec.BuildOptions.Recipe[0].Command
-			if cmd.Args[0] != expected {
-				t.Error(fmt.Errorf("cmd runs %s, expected %s", cmd.Args[0], expected))
-				return
-			}
-		})
-	})
-	t.Run("makeArtifactsDirectory", func(t *testing.T) {
-		r := testRunner.Clone().Build()
-		t.Run("does not exist", func(t *testing.T) {
-			newRoot := t.TempDir() // get a fresh temporary directory
-			r.SetRoot(newRoot)
-			r.ArtifactsDirectory = filepath.Join(newRoot, "dist")
-			err := r.makeArtifactsDirectory()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			// directory should exist now
-			_, err = os.Stat(filepath.Join(newRoot, "dist"))
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			// Cleanup removes inner temp dir
-		})
-		t.Run("already exists", func(t *testing.T) {
-			newRoot := t.TempDir()
-			err := os.Mkdir(filepath.Join(newRoot, "dist"), 0777)
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			r.Root = newRoot
-			// should return nil, as directory should already exist
-			err = r.makeArtifactsDirectory()
-			if err != nil {
-				t.Error(err)
-				return
-			}
-			// Cleanup removes inner temp dir
-		})
-	})
-	// not actually building anything in between because that would
-	// introduce a dependency on latex in testing - which is definitely
-	// not what we want
-	t.Run("exportArtifacts", func(t *testing.T) {
-		r := testRunner.Clone().Build()
-		// since we don't need an actual PDF at the src path,
-		// just create a small test file named "assignment.pdf"
+	t.Run("SetRoot", func(t *testing.T) {
 		newRoot := t.TempDir()
-		r.Root = newRoot
+		testRunner.SetRoot(newRoot)
 
-		pdf, err := os.Create(filepath.Join(r.TargetDirectory(), "assignment.pdf"))
-		if err != nil {
-			t.Error(err)
+		if testRunner.root != newRoot {
+			t.Error(fmt.Errorf("expected runner root to be %s, found %s", newRoot, testRunner.root))
 			return
 		}
-		_, err = pdf.WriteString(validAssignmentTexCode)
-		if err != nil {
-			t.Error(err)
+		if !strings.HasPrefix(testRunner.ArtifactsDirectory(), newRoot) {
+			t.Error(fmt.Errorf("expected runner artifacts directory to have prefix %s, found %s", newRoot, testRunner.ArtifactsDirectory()))
 			return
 		}
-		err = pdf.Close()
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		dest, err := r.exportArtifacts()
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		sfi, _ := os.Stat(filepath.Join(r.TargetDirectory(), "assignment.pdf"))
-
-		// check if assignment is in dist folder
-		fi, err := os.Stat(dest)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-
-		if sfi.Size() != fi.Size() {
-			t.Error(fmt.Errorf("src and dest files are not the same size, expected %d bytes, found %d bytes", sfi.Size(), fi.Size()))
+		if !strings.HasPrefix(testRunner.TargetDirectory(), newRoot) {
+			t.Error(fmt.Errorf("expcted runner target directory to have prefix %s, found %s", newRoot, testRunner.TargetDirectory()))
 		}
 	})
-}
 
-func TestValidRunnerFromRoot(t *testing.T) {
-	workingDirectory := t.TempDir()
-
-	targetDirectory, err := makeSourceFile(workingDirectory)
-	if err != nil {
-		t.Error(err)
-	}
-
-	ctx, err := makeAppContext(workingDirectory)
-	if err != nil {
-		t.Error(err)
-	}
-
-	testRunner, err := New(ctx, &RunnerOptions{
-		TargetDirectory:   targetDirectory,
-		OverrideArtifacts: true,
-		Quiet:             false,
+	t.Run("SetTargetDirectory(abs)", func(t *testing.T) {
+		newRoot := t.TempDir()
+		newTargetDirectory := filepath.Join(newRoot, "assignment-02")
+		testRunner.SetTargetDirectory(newTargetDirectory)
+		if !filepath.IsAbs(testRunner.targetDirectory) {
+			t.Error(fmt.Errorf("expected testRunner.TargetDirectory() to be absolute, found %s", testRunner.TargetDirectory()))
+			return
+		}
+		if testRunner.TargetDirectory() != newTargetDirectory {
+			t.Error(fmt.Errorf("expected testRunner.TargetDirectory() to be %s, found %s", newTargetDirectory, testRunner.TargetDirectory()))
+			return
+		}
+		if testRunner.targetDirectory != testRunner.TargetDirectory() {
+			t.Error(fmt.Errorf("expected testRunner.targetDirectory to be equal to %s, found %s", testRunner.TargetDirectory(), testRunner.targetDirectory))
+			return
+		}
 	})
-	if err != nil {
-		t.Error(err)
-	}
 
-	t.Run("Build", func(t *testing.T) {
-
+	t.Run("SetTargetDirectory(rel)", func(t *testing.T) {
+		newTargetDirectory := "assignment-03"
+		testRunner.SetTargetDirectory(newTargetDirectory)
+		if testRunner.targetDirectory != newTargetDirectory {
+			t.Error(fmt.Errorf("expected targetDirectory to be %s, found %s", newTargetDirectory, testRunner.targetDirectory))
+			return
+		}
+		if strings.HasPrefix(testRunner.TargetDirectory(), testRunner.root) {
+			t.Error(fmt.Errorf("expected testRunner.TargetDirectory() have prefix %s, found %s", testRunner.root, testRunner.TargetDirectory()))
+			return
+		}
 	})
-	t.Run("Clean", func(t *testing.T) {
+
+	t.Run("SetArtifactsDirectory", func(t *testing.T) {
 
 	})
 }
