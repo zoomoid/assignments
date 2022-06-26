@@ -114,11 +114,11 @@ func (b *RunnerContext) Clone() *RunnerContext {
 		cmds = append(cmds, destCmd)
 	}
 	return &RunnerContext{
-		targetDirectory:    b.TargetDirectory(),
-		filename:           b.Filename(),
-		artifactsDirectory: b.ArtifactsDirectory(),
-		quiet:              b.Quiet(),
-		overrideArtifacts:  b.OverrideArtifacts(),
+		targetDirectory:    b.targetDirectory,
+		filename:           b.filename,
+		artifactsDirectory: b.artifactsDirectory,
+		quiet:              b.quiet,
+		overrideArtifacts:  b.overrideArtifacts,
 		Commands:           cmds,
 		cwd:                b.cwd,
 		root:               b.root,
