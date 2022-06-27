@@ -119,7 +119,9 @@ func (b *builder) exportArtifacts() (string, error) {
 		return "", fmt.Errorf("failed to derive assignment number from target directory, got %s", b.ArtifactsDirectory())
 	}
 
-	srcPath := filepath.Join(b.ArtifactsDirectory(), b.filename)
+	artifactsPdf := strings.Replace(b.Filename(), ".tex", ".pdf", 1)
+
+	srcPath := filepath.Join(b.TargetDirectory(), artifactsPdf)
 	destPath := filepath.Join(d, fmt.Sprintf("assignment-%s.pdf", ai))
 
 	if _, err := os.Stat(destPath); !b.overrideArtifacts && err == nil {
@@ -137,7 +139,7 @@ func (b *builder) exportArtifacts() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = io.Copy(srcWriter, destWriter)
+	_, err = io.Copy(destWriter, srcWriter)
 	if err != nil {
 		return "", err
 	}
