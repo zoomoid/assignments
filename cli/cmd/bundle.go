@@ -64,12 +64,12 @@ func newBundleData() *bundleData {
 }
 
 func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command {
-
 	if data == nil {
 		data = newBundleData()
 	}
 
 	err := ctx.Read()
+	defer ctx.Write()
 	if err != nil {
 		ctx.Logger.Fatalf("Failed to read config file", err)
 	}
@@ -112,22 +112,22 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 			templateBindings := ctx.Configuration.Spec.BundleOptions.Data
 			templateBindings["_id"] = assignmentNo
 
-			files := []string{}
+			bundleRuns := []string{}
 
 			if !data.all {
 				assignment := fmt.Sprintf("assignments-%s.pdf", util.AddLeadingZero(assignmentNo))
-				files = append(files, assignment)
+				bundleRuns = append(bundleRuns, assignment)
 			} else {
 				assignments, err := filepath.Glob(filepath.Join(ctx.Root, "dist", "assignment-*.pdf"))
 				if err != nil {
 					return err
 				}
 				for _, assignment := range assignments {
-					files = append(files, filepath.Base(assignment))
+					bundleRuns = append(bundleRuns, filepath.Base(assignment))
 				}
 			}
 
-			for _, file := range files {
+			for _, file := range bundleRuns {
 				opts := &bundle.BundlerOptions{
 					Backend:  backend,
 					Template: template,
@@ -137,16 +137,22 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 				}
 				bundler, err := bundle.New(ctx, opts)
 				if err != nil {
-					return err
-				}
-				fn, err := bundler.Make()
-				if err != nil {
+					if errors.Is(err, bundle.ErrArchiveExists) {
+						// only skip the current bundling, continue with other runs
+						ctx.Logger.Warnf("Archive %s already exists and --force is not specified, skipping...", bundler.ArchiveName())
+						break
+					}
 					return err
 				}
 
-				ctx.Logger.Infof("Finished bundling %s to ./dist/", fn)
+				if err := bundler.Bundle(); err != nil {
+					return err
+				}
+
+				archiveName := bundler.ArchiveName()
+
+				ctx.Logger.Infof("Finished bundling assignment to %s in ./dist/", archiveName)
 			}
-
 			return nil
 		},
 	}
