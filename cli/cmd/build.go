@@ -71,6 +71,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 	if err != nil {
 		ctx.Logger.Fatalf("Failed to read config file", err)
 	}
+	defer ctx.Write()
 
 	buildCmd := &cobra.Command{
 		Use:   "build",
@@ -102,37 +103,21 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 					return fmt.Errorf("failed to glob directories in %s, %v", ctx.Root, err)
 				}
 				for _, dir := range directories {
-					filename := filepath.Join(dir, "assignment.tex")
+					filename := "assignment.tex"
 					runs = append(runs, runner.RunnerOptions{
-						TargetDirectory:   dir,
+						TargetDirectory:   filepath.Base(dir),
 						Filename:          filename,
 						Quiet:             data.quiet,
 						OverrideArtifacts: data.force,
 					})
 				}
 			} else {
-				targetDirectory := filepath.Join(ctx.Root, fmt.Sprintf("assignment-%s", util.AddLeadingZero(assignmentNo)))
-				filename := filepath.Join(targetDirectory, "assignment.tex")
+				targetDirectory := fmt.Sprintf("assignment-%s", util.AddLeadingZero(assignmentNo))
+				filename := "assignment.tex"
 				if data.file != "" {
-					absPath, err := filepath.Abs(data.file)
+					targetDirectory, filename, err = targetDirectoryFromFlag(data.file)
 					if err != nil {
 						return err
-					}
-
-					// override targetDirectory and filename conditionally, depending on whether the argument is a file or a directory
-					fi, err := os.Stat(absPath)
-					if err != nil {
-						return err
-					}
-
-					if fi.IsDir() {
-						// append default filename
-						targetDirectory = absPath
-						filename = filepath.Join(absPath, "assignment.tex")
-					} else {
-						// file is a regular file
-						filename = absPath
-						targetDirectory = filepath.Dir(absPath)
 					}
 				}
 
@@ -175,7 +160,37 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 	addBuildFlags(buildCmd.Flags(), data)
 
 	return buildCmd
+}
 
+// targetDirectoryFromFlag uses the --file flag to determine the targetDirectory and filename to build.
+// It returns a triplet containing (targetDirectory, filename, error), where error is not nil iff and only if
+// an error occured during file system interaction, i.e. expanding the path to absolute, and probing the path.
+func targetDirectoryFromFlag(file string) (string, string, error) {
+	var targetDirectory string
+	var filename string
+	// augment path to be absolute, e.g. "-f ." is expanded to "CWD/assignment.tex"
+	absPath, err := filepath.Abs(file)
+	if err != nil {
+		return "", "", err
+	}
+
+	// override targetDirectory and filename conditionally, depending on whether the argument is a file or a directory
+	fi, err := os.Stat(absPath)
+	if err != nil {
+		return "", "", err
+	}
+	if fi.IsDir() {
+		// passed in a directory, defaulting filename to assignment.tex and the absolute path created from the flag
+		// NOTE that e.g. runner.SetRoot() WILL NOT change the target directory when used this way, as the path
+		// pased down to the runner is absolute.
+		targetDirectory = absPath
+		filename = "assignment.tex"
+	} else {
+		// file is a regular file, use filepath.Dir() for target directory and filepath.Base() to make filename relative/local again
+		targetDirectory = filepath.Dir(absPath)
+		filename = filepath.Base(absPath)
+	}
+	return targetDirectory, filename, nil
 }
 
 func addBuildFlags(flags *pflag.FlagSet, data *buildData) {
