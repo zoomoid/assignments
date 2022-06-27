@@ -67,14 +67,10 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 		// when TargetDirectory is not specified, use the current working dir as target
 		runner.targetDirectory = context.Cwd
 	} else {
-		if filepath.IsAbs(options.TargetDirectory) {
-			runner.targetDirectory = options.TargetDirectory
-		} else {
-			runner.targetDirectory = filepath.Join(context.Root, options.TargetDirectory)
-		}
+		runner.targetDirectory = options.TargetDirectory
 	}
 
-	runner.artifactsDirectory = filepath.Join(context.Root, "dist")
+	runner.artifactsDirectory = "dist"
 
 	if options.Filename == "" {
 		runner.filename = options.Filename
