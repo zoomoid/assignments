@@ -72,7 +72,7 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 
 	runner.artifactsDirectory = "dist"
 
-	if options.Filename == "" {
+	if options.Filename != "" {
 		runner.filename = options.Filename
 	} else {
 		runner.filename = "assignment.tex"
