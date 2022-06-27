@@ -188,9 +188,16 @@ func TestBuildRunner(t *testing.T) {
 		// since we don't need an actual PDF at the src path,
 		// just create a small test file named "assignment.pdf"
 		newRoot := t.TempDir()
+		// after switching root, create new source directory structure
+		// to copy the artificial assignment.pdf to
+		_, err := makeSourceFile(newRoot)
+		if err != nil {
+			t.Error(err)
+			return
+		}
 		r.SetRoot(newRoot)
-
-		pdf, err := os.Create(filepath.Join(r.TargetDirectory(), "assignment.pdf"))
+		pdfPath := filepath.Join(r.TargetDirectory(), "assignment.pdf")
+		pdf, err := os.Create(pdfPath)
 		if err != nil {
 			t.Error(err)
 			return
