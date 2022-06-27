@@ -2,26 +2,18 @@ package bundle
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
 )
 
-// BundlingContext contains all fields passed down to the template renderer for the filename of a bundle
-type BundlingContext struct {
-	// ID is the assignment id, e.g. "01"
-	ID string `json:"id"`
-	// Members contains group member information, possibly included in the filename
-	Members []config.GroupMember `json:"members"`
-	Format  BundlerBackend
-}
-
-// BundlerBackend is a specific string type for
+// BundlerBackend is a specific string type for picking backends, and consequently file endings
 type BundlerBackend string
 
 const (
@@ -33,14 +25,20 @@ const (
 	BundlerBackendTarGzip BundlerBackend = "tar.gz"
 )
 
-var defaultArchiveNameTemplate string = "assignment-{{._id}}.{{.format}}"
+var (
+	// ErrAchiveExists is a static error that indicates an archive already existing without explitly truncating it
+	ErrArchiveExists error = errors.New("archive already exists")
+	// default archive template. This contains the fields _id and format, which are automatically aliased
+	// into the map that contains the data bindings, thus are ALWAYS available
+	defaultArchiveNameTemplate string = "assignment-{{._id}}.{{.format}}"
+)
 
 // Bundler interface all backends should implement
 type Bundler interface {
 	// AddAssignment adds the main assignment PDF at the root of the archive
 	AddAssignment() error
-	// AddAuxilliaryFile adds all files from directories defined in the bundling spec to the archive
-	AddAuxilliaryFile(filename string) error
+	// AddAuxilliaryFiles adds all files from directories defined in the bundling spec to the archive
+	AddAuxilliaryFiles() error
 	// Close finishes the archive creation by closing all remaining writers
 	Close() error
 }
@@ -62,10 +60,13 @@ type BundlerOptions struct {
 	// These are defined in the configuration file and should be relative to
 	// each assignment's root
 	Includes []string
+	// Force indicates truncating any existing archives with the same name and creating it from scratch
+	Force bool
 }
 
 type BundlerContext struct {
 	context.AppContext
+	// BundlerOptions are all fields passed into the New constructor for a bundler
 	BundlerOptions
 	// files contain all the files additionally to be included
 	files []string
@@ -76,6 +77,8 @@ type BundlerContext struct {
 	// base is a string of the form assignment-<no> required for structural assumptions
 	// about the directory structure
 	base string
+	// archiveName is the name of the archive created when executing the template
+	archiveName string
 }
 
 // New makes a new bundling context from the context and the options passed as parameters
@@ -84,8 +87,120 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 	sourceDirectory := strings.ReplaceAll(options.Target, ".pdf", "")
 	base := filepath.Join(ctx.Root, sourceDirectory)
 
+	additionalFiles, err := additionalFiles(options.Includes, sourceDirectory)
+	if err != nil {
+		return nil, err
+	}
+
+	archiveName, err := makeArchiveName(options.Template, options.Data, options.Backend)
+	if err != nil {
+		return nil, err
+	}
+
+	bundlerCtx := ctx.Clone()
+
+	bundler := &BundlerContext{
+		BundlerOptions:     *options,
+		AppContext:         *bundlerCtx,
+		files:              additionalFiles,
+		artifactsDirectory: artifactsDirectory,
+		sourceDirectory:    sourceDirectory,
+		base:               base, // this is always the same as sourceDirectory, maybe save on this field?
+		archiveName:        archiveName,
+	}
+
+	if !options.Force && bundler.Exists() {
+		return bundler, ErrArchiveExists
+	}
+
+	return bundler, nil
+}
+
+// Bundle runs the bundling action by picking a bundle implementor from the selected backend
+// Returns the archive's filename when successful, otherwise an error and the empty string
+func (b *BundlerContext) Bundle() error {
+	bundler, err := b.makeBundler()
+	if err != nil {
+		return err
+	}
+
+	if err := bundler.AddAssignment(); err != nil {
+		return err
+	}
+	if err := bundler.AddAuxilliaryFiles(); err != nil {
+		return err
+	}
+	if err := bundler.Close(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ArchiveName returns the context's archive name field to other modules
+func (b *BundlerContext) ArchiveName() string {
+	return b.archiveName
+}
+
+// Exists checks if the archive that is created by the bundler already exists.
+// Returns true if `os.Stat` is successful. Returns false otherwise, *even if the
+// error returned by `os.Stat` is not os.ErrNotExist*.
+func (b *BundlerContext) Exists() bool {
+	_, err := os.Stat(filepath.Join(b.artifactsDirectory, b.archiveName))
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			b.Logger.Warnf("failed to stat %s with error other than ErrNotExist, %v", filepath.Join(b.artifactsDirectory, b.archiveName), err)
+		}
+		return false
+	}
+	return true
+}
+
+// makeBundler internally differentiates between bundler implementations chosen
+// by the backend, and returns an instance of that bundler.
+//
+// If a backend is selected that isn't explicitly supported, makeBundler returns
+// an error containing the name of the chosen backend.
+func (b *BundlerContext) makeBundler() (Bundler, error) {
+	switch b.Backend {
+	case BundlerBackendTar:
+		bundler, err := NewTarBundler(&b.AppContext, b.files, &TarBundlerOptions{
+			ArchiveName:        b.archiveName,
+			AssignmentBase:     b.base,
+			ArtifactsDirectory: b.artifactsDirectory,
+		})
+		return bundler, err
+	case BundlerBackendTarGzip:
+		bundler, err := NewGzipBundler(&b.AppContext, b.files, &GzipBundlerOptions{
+			ArchiveName:        b.archiveName,
+			AssignmentBase:     b.base,
+			ArtifactsDirectory: b.artifactsDirectory,
+		})
+		return bundler, err
+	case BundlerBackendZip:
+	default:
+		bundler, err := NewZipBundler(&b.AppContext, b.files, &ZipBundlerOptions{
+			ArchiveName:        b.archiveName,
+			ArtifactsDirectory: b.artifactsDirectory,
+			AssignmentBase:     b.base,
+		})
+		return bundler, err
+	}
+	return nil, fmt.Errorf("backend %s is not supported", b.Backend)
+}
+
+// additionalFiles takes a slice of paths or glob patterns and a source directory,
+// and executes the glob pattern in that source directory. It returns a slice of
+// all files that matched the glob pattern and all files directly matched. If an
+// element in includes is a directory *without* a glob pattern, any children of that
+// directory are ignored. You will have to use a glob pattern to include all children
+// of a directory.
+//
+// If executing the glob pattern fails, additionalFiles returns nil and an error containing
+// the pattern that failed to glob.
+func additionalFiles(includes []string, sourceDirectory string) ([]string, error) {
 	additionalFiles := make([]string, 0)
-	for _, f := range options.Includes {
+	for _, f := range includes {
 		if strings.Contains(f, "*") {
 			// f is a glob pattern
 			files, err := filepath.Glob(filepath.Join(sourceDirectory, f))
@@ -101,91 +216,20 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 			} // otherwise f is a directory, which, if it does not contain a glob pattern, will be ignored
 		}
 	}
-
-	bundler := &BundlerContext{
-		BundlerOptions:     *options,
-		AppContext:         *ctx,
-		files:              additionalFiles,
-		artifactsDirectory: artifactsDirectory,
-		sourceDirectory:    sourceDirectory,
-		base:               base, // this is always the same as sourceDirectory, maybe save on this field?
-	}
-
-	return bundler, nil
+	return additionalFiles, nil
 }
 
-// Make runs the bundling action by picking a bundle implementor from the selected backend
-// Returns the archive's filename when successful, otherwise an error and the empty string
-func (b *BundlerContext) Make() (string, error) {
-	archiveName, err := GenerateArchiveName(b.Template, b.Data, b.Backend)
-	if err != nil {
-		return "", err
-	}
-
-	if b.Backend == BundlerBackendTar {
-		bundler, err := NewTarBundler(&b.AppContext, &TarBundlerOptions{
-			ArchiveName:        archiveName,
-			AssignmentBase:     b.base,
-			ArtifactsDirectory: b.artifactsDirectory,
-		})
-		if err != nil {
-			return "", err
-		}
-
-		if err := bundler.AddAssignment(); err != nil {
-			return "", err
-		}
-		for _, file := range b.files {
-			if err := bundler.AddAuxilliaryFile(file); err != nil {
-				return "", err
-			}
-		}
-		if err := bundler.Close(); err != nil {
-			return "", err
-		}
-
-		return archiveName, nil
-	}
-	if b.Backend == BundlerBackendTarGzip {
-		return archiveName, nil
-	}
-	if b.Backend == BundlerBackendZip {
-		bundler, err := NewZipBundler(&b.AppContext, &ZipBundlerOptions{
-			ArtifactsDirectory: b.artifactsDirectory,
-			ArchiveName:        archiveName,
-			AssignmentBase:     b.base,
-		})
-		if err != nil {
-			return "", err
-		}
-
-		if err := bundler.AddAssignment(); err != nil {
-			return "", err
-		}
-		for _, file := range b.files {
-			if err := bundler.AddAuxilliaryFile(file); err != nil {
-				return "", err
-			}
-		}
-
-		if err := bundler.Close(); err != nil {
-			return "", err
-		}
-
-		return archiveName, nil
-	}
-	return "", fmt.Errorf("bundling backend %s not supported", b.Backend)
-}
-
-// GenerateArchiveName executes the template with the data given in the config file
+// makeArchiveName executes the template with the data given in the config file
 // Returns the archive's filename when successfully executed the template, otherwise
-// returns the occurred error and
-func GenerateArchiveName(tpl *string, data map[string]interface{}, backend BundlerBackend) (string, error) {
+// returns the occurred error and an empty string
+func makeArchiveName(tpl *string, data map[string]interface{}, backend BundlerBackend) (string, error) {
 	if tpl == nil {
 		tpl = &defaultArchiveNameTemplate
 	}
 
-	data = deriveOrOverrideFormat(data, backend)
+	if _, ok := data["format"]; !ok {
+		data["format"] = format(backend)
+	}
 
 	tmpl := template.Must(template.New("bundleName").Funcs(sprig.TxtFuncMap()).Parse(*tpl))
 	var output bytes.Buffer
@@ -199,20 +243,17 @@ func GenerateArchiveName(tpl *string, data map[string]interface{}, backend Bundl
 	return output.String(), nil
 }
 
-// deriveOrOverrideFormat takes an arbitrary map of data bindings, looks for a predefined field for
+// format takes an arbitrary map of data bindings, looks for a predefined field for
 // the archive's format and otherwise derives the format from the chosen bundler backend
-func deriveOrOverrideFormat(data map[string]interface{}, backend BundlerBackend) map[string]interface{} {
-	if _, ok := data["format"]; !ok {
-		// no format override in map, derive from chosen backend
-		switch backend {
-		case BundlerBackendTar:
-		case BundlerBackendZip:
-		case BundlerBackendTarGzip:
-			data["format"] = backend
-		default:
-			data["format"] = ""
-		}
-		return data
+func format(backend BundlerBackend) BundlerBackend {
+	// no format override in map, derive from chosen backend
+	switch backend {
+	case BundlerBackendTar:
+	case BundlerBackendZip:
+	case BundlerBackendTarGzip:
+		return backend
+	default:
+		return ""
 	}
-	return data
+	return ""
 }

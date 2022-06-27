@@ -23,12 +23,13 @@ type TarBundler struct {
 	writer  *tar.Writer
 	*TarBundlerOptions
 	archive         *os.File
+	files           []string
 	sourceDirectory string
 }
 
 var _ Bundler = &TarBundler{}
 
-func NewTarBundler(ctx *context.AppContext, options *TarBundlerOptions) (*TarBundler, error) {
+func NewTarBundler(ctx *context.AppContext, files []string, options *TarBundlerOptions) (*TarBundler, error) {
 	archive, err := os.Create(filepath.Join(options.ArtifactsDirectory, options.ArchiveName))
 	if err != nil {
 		return nil, err
@@ -41,6 +42,7 @@ func NewTarBundler(ctx *context.AppContext, options *TarBundlerOptions) (*TarBun
 		AppContext:        ctx,
 		TarBundlerOptions: options,
 		writer:            writer,
+		files:             files,
 		sourceDirectory:   options.AssignmentBase,
 	}
 
@@ -87,9 +89,18 @@ func (b *TarBundler) AddAssignment() error {
 	return nil
 }
 
-// AddAuxilliaryFileToArchive opens a file descriptor for the file and
+func (b *TarBundler) AddAuxilliaryFiles() error {
+	for _, f := range b.files {
+		if err := b.addAuxilliaryFile(f); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// addAuxilliaryFile opens a file descriptor for the file and
 // writes it to the tar archive file
-func (b *TarBundler) AddAuxilliaryFile(filename string) error {
+func (b *TarBundler) addAuxilliaryFile(filename string) error {
 	if b.writer == nil {
 		return errors.New("writer not created yet")
 	}

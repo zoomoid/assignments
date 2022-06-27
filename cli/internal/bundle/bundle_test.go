@@ -111,13 +111,11 @@ func TestSyntheticTarBundling(t *testing.T) {
 
 func TestSynthenticTarGzipBundling(t *testing.T) {
 	dir := t.TempDir()
-	out, err := os.Create(filepath.Join(dir, "output.tar.gz"))
+	fn := filepath.Join(dir, "output.tar.gz")
+	out, err := os.Create(fn)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	gw := gzip.NewWriter(out)
-	tw := tar.NewWriter(gw)
 
 	var files = []struct {
 		Name string
@@ -125,52 +123,102 @@ func TestSynthenticTarGzipBundling(t *testing.T) {
 		{"bundle_test.go"},
 		{"bundle.go"},
 	}
-	for _, file := range files {
 
-		f, err := os.Open(file.Name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		info, err := f.Stat()
+	t.Run("packing", func(t *testing.T) {
+		gw := gzip.NewWriter(out)
+		tw := tar.NewWriter(gw)
+		for _, file := range files {
 
-		if err != nil {
-			t.Fatal(err)
-		}
+			f, err := os.Open(file.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			info, err := f.Stat()
 
-		header, err := tar.FileInfoHeader(info, info.Name())
-		if err != nil {
-			t.Fatal(err)
-		}
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		header.Name = file.Name
+			header, err := tar.FileInfoHeader(info, info.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if err := tw.WriteHeader(header); err != nil {
+			header.Name = file.Name
+
+			if err := tw.WriteHeader(header); err != nil {
+				t.Fatal(err)
+			}
+			_, err = io.Copy(tw, f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = f.Close()
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := tw.Close(); err != nil {
 			t.Fatal(err)
 		}
-		_, err = io.Copy(tw, f)
-		if err != nil {
+		if err := gw.Close(); err != nil {
 			t.Fatal(err)
 		}
-		err = f.Close()
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := tw.Close(); err != nil {
-		t.Fatal(err)
-	}
-	if err := gw.Close(); err != nil {
-		t.Fatal(err)
-	}
+	})
+
 	if err := out.Close(); err != nil {
-		t.Fatal(err)
+		t.Error(err)
+	}
+
+	rout, err := os.Open(fn)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Run("unpacking", func(t *testing.T) {
+		gr, err := gzip.NewReader(rout)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tr := tar.NewReader(gr)
+
+		for {
+			header, err := tr.Next()
+
+			if err == io.EOF {
+				break
+			}
+			fl := filepath.Join(dir, header.Name)
+
+			f, err := os.Create(fl)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := io.Copy(f, tr); err != nil {
+				t.Fatal(err)
+			}
+			if err = f.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		for _, f := range files {
+			_, err := os.Stat(filepath.Join(dir, f.Name))
+			if err != nil {
+				t.Error(err)
+			}
+		}
+	})
+	if err = rout.Close(); err != nil {
+		t.Error(err)
 	}
 }
 
 func TestSynthenticZipBundling(t *testing.T) {
 	dir := t.TempDir()
 	// dir := "."
-	out, err := os.Create(filepath.Join(dir, "output.zip"))
+	fn := filepath.Join(dir, "output.zip")
+	out, err := os.Create(fn)
 	if err != nil {
 		t.Fatal(err)
 	}
