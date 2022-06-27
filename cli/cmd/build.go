@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
 	"github.com/zoomoid/assignments/v1/internal/context"
-	"github.com/zoomoid/assignments/v1/internal/latexmk"
+	"github.com/zoomoid/assignments/v1/internal/runner"
 	"github.com/zoomoid/assignments/v1/internal/util"
 )
 
@@ -78,7 +78,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 		Long:  buildLongDescription,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			runs := []latexmk.RunnerOptions{}
+			runs := []runner.RunnerOptions{}
 			assignmentNo := ctx.Configuration.Status.Assignment
 
 			if len(args) != 0 {
@@ -96,8 +96,6 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				return errors.New("cannot use -f flag with specific assignment")
 			}
 
-			artifactsDirectory := filepath.Join(ctx.Root, "dist")
-
 			if data.all {
 				directories, err := filepath.Glob(filepath.Join(ctx.Root, "assignment-*"))
 				if err != nil {
@@ -105,11 +103,11 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				}
 				for _, dir := range directories {
 					filename := filepath.Join(dir, "assignment.tex")
-					runs = append(runs, latexmk.RunnerOptions{
-						TargetDirectory:    dir,
-						Filename:           filename,
-						ArtifactsDirectory: artifactsDirectory,
-						Quiet:              data.quiet,
+					runs = append(runs, runner.RunnerOptions{
+						TargetDirectory:   dir,
+						Filename:          filename,
+						Quiet:             data.quiet,
+						OverrideArtifacts: data.force,
 					})
 				}
 			} else {
@@ -138,17 +136,17 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 					}
 				}
 
-				runs = []latexmk.RunnerOptions{{
-					TargetDirectory:    targetDirectory,
-					Filename:           filename,
-					ArtifactsDirectory: artifactsDirectory,
-					Quiet:              data.quiet,
+				runs = []runner.RunnerOptions{{
+					TargetDirectory:   targetDirectory,
+					Filename:          filename,
+					Quiet:             data.quiet,
+					OverrideArtifacts: data.force,
 				}}
 			}
 
 			startTime := time.Now()
 			for _, run := range runs {
-				runner, err := latexmk.New(ctx, &run)
+				runner, err := runner.New(ctx, &run)
 				if err != nil {
 					ctx.Logger.Errorf("failed to initialize runner for assignment %d in %s ", assignmentNo, run.Filename)
 					return err
