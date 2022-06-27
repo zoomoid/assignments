@@ -186,7 +186,7 @@ func TestRunner(t *testing.T) {
 			t.Error(fmt.Errorf("expected targetDirectory to be %s, found %s", newTargetDirectory, testRunner.targetDirectory))
 			return
 		}
-		if strings.HasPrefix(testRunner.TargetDirectory(), testRunner.root) {
+		if !strings.HasPrefix(testRunner.TargetDirectory(), testRunner.root) {
 			t.Error(fmt.Errorf("expected testRunner.TargetDirectory() have prefix %s, found %s", testRunner.root, testRunner.TargetDirectory()))
 			return
 		}
