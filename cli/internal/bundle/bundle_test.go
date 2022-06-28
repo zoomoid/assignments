@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/zoomoid/assignments/v1/internal/context"
 )
 
 func TestSyntheticTarBundling(t *testing.T) {
@@ -249,4 +251,44 @@ func TestSynthenticZipBundling(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+}
+
+func TestMakeBundler(t *testing.T) {
+	ctx, _ := context.NewDevelopment()
+	bundler, err := New(ctx, &BundlerOptions{
+		Target: "assignment-01.pdf",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("backend=BundlerBackendTar", func(t *testing.T) {
+		bundler.Backend = BundlerBackendTar
+		b, err := bundler.makeBundler()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if b.Type() != BundlerBackendTar {
+			t.Errorf("expected type of bundler to be %s, found %s", BundlerBackendTar, b.Type())
+		}
+	})
+	t.Run("backend=BundlerBackendZip", func(t *testing.T) {
+		bundler.Backend = BundlerBackendZip
+		b, err := bundler.makeBundler()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if b.Type() != BundlerBackendZip {
+			t.Errorf("expected type of bundler to be %s, found %s", BundlerBackendZip, b.Type())
+		}
+	})
+	t.Run("backend=BundlerBackendTarGzip", func(t *testing.T) {
+		bundler.Backend = BundlerBackendTarGzip
+		b, err := bundler.makeBundler()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if b.Type() != BundlerBackendTarGzip {
+			t.Errorf("expected type of bundler to be %s, found %s", BundlerBackendTarGzip, b.Type())
+		}
+	})
 }
