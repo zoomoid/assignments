@@ -1,16 +1,15 @@
 package cmd
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 	"github.com/zoomoid/assignments/v1/cmd/options"
+	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
 	"go.uber.org/zap"
 )
@@ -36,7 +35,7 @@ func Execute() {
 
 	// if we cannot find a configuration file in here, traverse the file tree upwards
 	// until either the root or we find a config file
-	cfgPath, err := findConfigmapFile(pwd)
+	cfgPath, err := config.Find(pwd)
 	if err != nil {
 		log.Fatal("Failed to find configmap in working directory or above. Is the directory initialized?")
 	}
@@ -95,24 +94,6 @@ func NewRootCommand(opts *rootOptions) *cobra.Command {
 	rootCmd.AddCommand(NewBundleCommand(ctx, nil))
 
 	return rootCmd
-}
-
-func findConfigmapFile(start string) (string, error) {
-	p := start
-	for {
-		_, err := os.Stat(p)
-		if err != nil {
-			if filepath.Base(filepath.ToSlash(p)) == "/" {
-				break
-			}
-			// move up one level and try again
-			p = filepath.Clean(fmt.Sprintf("%s/../", p))
-			continue
-		}
-		// found configmap file at p
-		return p, nil
-	}
-	return "", errors.New("failed to find configmap in working directory or above")
 }
 
 func makeLogger(verbose bool) (*zap.SugaredLogger, error) {
