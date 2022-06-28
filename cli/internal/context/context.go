@@ -1,6 +1,8 @@
 package context
 
 import (
+	"os"
+
 	config "github.com/zoomoid/assignments/v1/internal/config"
 	zap "go.uber.org/zap"
 )
@@ -27,7 +29,7 @@ type AppContext struct {
 
 // Read uses the context's root to read a configmap into the context's struct field
 func (c *AppContext) Read() error {
-	cfg, err := config.ReadConfigMap(c.Root)
+	cfg, err := config.Read(c.Root)
 	if err != nil {
 		return err
 	}
@@ -37,7 +39,7 @@ func (c *AppContext) Read() error {
 
 // Write writes the context's struct field to a file at the context's root
 func (c *AppContext) Write() error {
-	err := config.WriteConfigMap(c.Configuration, c.Root)
+	err := config.Write(c.Configuration, c.Root)
 	return err
 }
 
@@ -50,4 +52,56 @@ func (c *AppContext) Clone() *AppContext {
 		Logger:        c.Logger, // don't actually clone the zap logger, this is fine to be aliased by all contexts
 	}
 	return nc
+}
+
+// NewDevelopment creates a new AppContext with development logger from scratch
+func NewDevelopment() (context *AppContext, err error) {
+	logger, err := newLogger(false)
+	if err != nil {
+		return nil, err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	return &AppContext{
+		Logger:        logger,
+		Configuration: nil,
+		Cwd:           cwd,
+		Root:          cwd,
+	}, nil
+}
+
+// NewProduction creates a new AppContext with production logger from scratch
+func NewProduction() (context *AppContext, err error) {
+	logger, err := newLogger(true)
+	if err != nil {
+		return nil, err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	return &AppContext{
+		Logger:        logger,
+		Configuration: nil,
+		Cwd:           cwd,
+		Root:          cwd,
+	}, nil
+}
+
+// newLogger creates either a new production or a new development zap logger
+func newLogger(production bool) (*zap.SugaredLogger, error) {
+	var l *zap.Logger
+	var err error
+	if production {
+		l, err = zap.NewProduction()
+	} else {
+		l, err = zap.NewDevelopment()
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer l.Sync()
+	return l.Sugar(), nil
 }
