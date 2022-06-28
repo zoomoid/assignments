@@ -12,24 +12,41 @@ import (
 )
 
 type ZipBundlerOptions struct {
-	ArchiveName        string
-	AssignmentBase     string
+	// ArchiveName created in Bundler.New()
+	ArchiveName string
+	// SourceDirectory is the directory where the additional files and
+	// the assignment's source originate
+	SourceDirectory string
+	// Artifacts directory is the directory where the PDF originates from
 	ArtifactsDirectory string
 }
 
 type ZipBundler struct {
+	// context.AppContext is a reference to a cloned AppContext
 	*context.AppContext
-	backend BundlerBackend
-	writer  *zip.Writer
+	// embedded struct of the options passed to NewGzipBundler
 	*ZipBundlerOptions
-	archive         *os.File
-	files           []string
+	// backend is the selected backend, here, always BundlerBackendTarGzip, for aligning file endings
+	backend BundlerBackend
+	// writer is a pointer to the writer context for tar files. It is configured to pipe its
+	// output to the gzip writer for compression
+	writer *zip.Writer
+	// archive is the file descriptor opened to write the gzipped tarball to. Calling Bundler.Close()
+	// will close it, as well as the writers linked to it
+	archive *os.File
+	// sourceDirectory contains the directory from which to include additional files from.
+	// It is the base for the Include patterns in Configuration.Spec.BundleOptions.
 	sourceDirectory string
+	// files contains paths to all auxilliary files to be added to an archive
+	files []string
 }
 
 var _ Bundler = &ZipBundler{}
 
-// NewZipBundler
+// NewZipBundler makes a new zip bundler that uses the archive/zip module.
+// It returns a ZipBundler that implements the Bundler interface.
+//
+// If the archive file descriptor cannot be created, NewZipBundler returns an error.
 func NewZipBundler(ctx *context.AppContext, files []string, options *ZipBundlerOptions) (*ZipBundler, error) {
 	archive, err := os.Create(filepath.Join(options.ArtifactsDirectory, options.ArchiveName))
 	if err != nil {
@@ -44,7 +61,7 @@ func NewZipBundler(ctx *context.AppContext, files []string, options *ZipBundlerO
 		ZipBundlerOptions: options,
 		writer:            zw,
 		files:             files,
-		sourceDirectory:   options.AssignmentBase,
+		sourceDirectory:   options.SourceDirectory,
 	}
 
 	return bundler, nil
@@ -56,12 +73,17 @@ func (b *ZipBundler) Close() error {
 	return b.writer.Close()
 }
 
+// Type returns the static type of the bundler
+func (b *ZipBundler) Type() BundlerBackend {
+	return BundlerBackendZip
+}
+
 // AddAssignmentToArchive implements writing the assignment's PDF to the zip archive
 func (b *ZipBundler) AddAssignment() error {
 	if b.writer == nil {
 		return errors.New("writer not created yet")
 	}
-	assignmentPdfName := fmt.Sprintf("%s.pdf", b.AssignmentBase)
+	assignmentPdfName := fmt.Sprintf("%s.pdf", b.SourceDirectory)
 	src, err := os.Open(filepath.Join(b.ArtifactsDirectory, assignmentPdfName))
 	if err != nil {
 		return err

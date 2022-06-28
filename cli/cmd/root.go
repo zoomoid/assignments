@@ -23,8 +23,10 @@ var (
 
 func Execute() {
 
+	// parse verbose flag early
 	var verbose bool
 	flag.BoolVar(&verbose, options.VerboseShort, false, "Prints debug logs")
+	// TODO: check if this break further flag parsing in pflags
 	flag.Parse()
 
 	// program's working directory

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/zoomoid/assignments/v1/internal/context"
+	"github.com/zoomoid/assignments/v1/internal/util"
 )
 
 // BundlerBackend is a specific string type for picking backends, and consequently file endings
@@ -41,6 +42,8 @@ type Bundler interface {
 	AddAuxilliaryFiles() error
 	// Close finishes the archive creation by closing all remaining writers
 	Close() error
+	// Type returns the BundlerBackend type of this particular instance
+	Type() BundlerBackend
 }
 
 // BundlerOptions captures shared bundler options
@@ -97,6 +100,19 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 		return nil, err
 	}
 
+	data := options.Data
+	if data == nil {
+		data = make(map[string]interface{})
+		id, err := util.AssignmentNumberFromFilename(filepath.Base(options.Target))
+		if err != nil {
+			return nil, err
+		}
+		data["_id"] = id
+	}
+	if _, ok := data["format"]; !ok {
+		data["format"] = format(options.Backend)
+	}
+
 	bundlerCtx := ctx.Clone()
 
 	bundler := &BundlerContext{
@@ -109,7 +125,7 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 		archiveName:        archiveName,
 	}
 
-	if !options.Force && bundler.Exists() {
+	if !options.Force && bundler.ArchiveExists() {
 		return bundler, ErrArchiveExists
 	}
 
@@ -142,10 +158,10 @@ func (b *BundlerContext) ArchiveName() string {
 	return b.archiveName
 }
 
-// Exists checks if the archive that is created by the bundler already exists.
+// ArchiveExists checks if the archive that is created by the bundler already exists.
 // Returns true if `os.Stat` is successful. Returns false otherwise, *even if the
 // error returned by `os.Stat` is not os.ErrNotExist*.
-func (b *BundlerContext) Exists() bool {
+func (b *BundlerContext) ArchiveExists() bool {
 	_, err := os.Stat(filepath.Join(b.artifactsDirectory, b.archiveName))
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -166,14 +182,14 @@ func (b *BundlerContext) makeBundler() (Bundler, error) {
 	case BundlerBackendTar:
 		bundler, err := NewTarBundler(&b.AppContext, b.files, &TarBundlerOptions{
 			ArchiveName:        b.archiveName,
-			AssignmentBase:     b.base,
+			SourceDirectory:    b.base,
 			ArtifactsDirectory: b.artifactsDirectory,
 		})
 		return bundler, err
 	case BundlerBackendTarGzip:
 		bundler, err := NewGzipBundler(&b.AppContext, b.files, &GzipBundlerOptions{
 			ArchiveName:        b.archiveName,
-			AssignmentBase:     b.base,
+			SourceDirectory:    b.base,
 			ArtifactsDirectory: b.artifactsDirectory,
 		})
 		return bundler, err
@@ -182,7 +198,7 @@ func (b *BundlerContext) makeBundler() (Bundler, error) {
 		bundler, err := NewZipBundler(&b.AppContext, b.files, &ZipBundlerOptions{
 			ArchiveName:        b.archiveName,
 			ArtifactsDirectory: b.artifactsDirectory,
-			AssignmentBase:     b.base,
+			SourceDirectory:    b.base,
 		})
 		return bundler, err
 	}
@@ -225,10 +241,6 @@ func additionalFiles(includes []string, sourceDirectory string) ([]string, error
 func makeArchiveName(tpl *string, data map[string]interface{}, backend BundlerBackend) (string, error) {
 	if tpl == nil {
 		tpl = &defaultArchiveNameTemplate
-	}
-
-	if _, ok := data["format"]; !ok {
-		data["format"] = format(backend)
 	}
 
 	tmpl := template.Must(template.New("bundleName").Funcs(sprig.TxtFuncMap()).Parse(*tpl))

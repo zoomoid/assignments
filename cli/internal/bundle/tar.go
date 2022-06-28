@@ -12,23 +12,42 @@ import (
 )
 
 type TarBundlerOptions struct {
-	ArchiveName        string
-	AssignmentBase     string
+	// ArchiveName created in Bundler.New()
+	ArchiveName string
+	// SourceDirectory is the directory where the additional files and
+	// the assignment's source originate
+	SourceDirectory string
+	// Artifacts directory is the directory where the PDF originates from
 	ArtifactsDirectory string
 }
 
 type TarBundler struct {
+	// context.AppContext is a reference to a cloned AppContext
 	*context.AppContext
-	backend BundlerBackend
-	writer  *tar.Writer
+	// embedded struct of the options passed to NewGzipBundler
 	*TarBundlerOptions
-	archive         *os.File
-	files           []string
+	// backend is the selected backend, here, always BundlerBackendTarGzip, for aligning file endings
+	backend BundlerBackend
+	// writer is a pointer to the writer context for tar files. It is configured to pipe its
+	// output to the gzip writer for compression
+	writer *tar.Writer
+	// archive is the file descriptor opened to write the gzipped tarball to. Calling Bundler.Close()
+	// will close it, as well as the writers linked to it
+	archive *os.File
+	// sourceDirectory contains the directory from which to include additional files from.
+	// It is the base for the Include patterns in Configuration.Spec.BundleOptions.
 	sourceDirectory string
+	// files contains paths to all auxilliary files to be added to an archive
+	files []string
 }
 
+// Compile-time check for TarBundler implementing the Bundler interface
 var _ Bundler = &TarBundler{}
 
+// NewTarBundler makes a new tar bundler that uses the archive/tar module.
+// It returns a TarBundler that implements the Bundler interface
+//
+// If the archive file descriptor cannot be created, NewTarBundler returns an error.
 func NewTarBundler(ctx *context.AppContext, files []string, options *TarBundlerOptions) (*TarBundler, error) {
 	archive, err := os.Create(filepath.Join(options.ArtifactsDirectory, options.ArchiveName))
 	if err != nil {
@@ -43,7 +62,7 @@ func NewTarBundler(ctx *context.AppContext, files []string, options *TarBundlerO
 		TarBundlerOptions: options,
 		writer:            writer,
 		files:             files,
-		sourceDirectory:   options.AssignmentBase,
+		sourceDirectory:   options.SourceDirectory,
 	}
 
 	return bundler, nil
@@ -56,12 +75,17 @@ func (b *TarBundler) Close() error {
 	return b.writer.Close()
 }
 
+// Type returns the static type of the bundler
+func (b *TarBundler) Type() BundlerBackend {
+	return BundlerBackendTar
+}
+
 // AddAssignmentToArchive implements writing the assignment's PDF to the tar archive
 func (b *TarBundler) AddAssignment() error {
 	if b.writer == nil {
 		return errors.New("writer not created yet")
 	}
-	assignmentPdfName := fmt.Sprintf("%s.pdf", b.AssignmentBase)
+	assignmentPdfName := fmt.Sprintf("%s.pdf", b.SourceDirectory)
 	src, err := os.Open(filepath.Join(b.ArtifactsDirectory, assignmentPdfName))
 	if err != nil {
 		return err

@@ -15,8 +15,10 @@ import (
 type GzipBundlerOptions struct {
 	// ArchiveName created in Bundler.New()
 	ArchiveName string
-	// AssignmentBase is the directory
-	AssignmentBase     string
+	// SourceDirectory is the directory where the additional files and
+	// the assignment's source originate
+	SourceDirectory string
+	// Artifacts directory is the directory where the PDF originates from
 	ArtifactsDirectory string
 }
 
@@ -43,12 +45,13 @@ type GzipBundler struct {
 	files []string
 }
 
+// Compile-time check for GzipBundler implmenting the Bundler interface
 var _ Bundler = &GzipBundler{}
 
 // NewGzipBundler makes a new gzip+tar bundler that encodes a tarball using gzip.
 // It returns a GzipBundler that implements the Bundler interface
 //
-// If the archive file descriptor cannot be created, it will
+// If the archive file descriptor cannot be created, NewGzipBundler returns an error.
 func NewGzipBundler(ctx *context.AppContext, files []string, options *GzipBundlerOptions) (*GzipBundler, error) {
 	archive, err := os.Create(filepath.Join(options.ArtifactsDirectory, options.ArchiveName))
 	if err != nil {
@@ -65,7 +68,7 @@ func NewGzipBundler(ctx *context.AppContext, files []string, options *GzipBundle
 		tarWriter:          tarWriter,
 		gzipWriter:         gzipWriter,
 		files:              files,
-		sourceDirectory:    options.AssignmentBase,
+		sourceDirectory:    options.SourceDirectory,
 	}
 
 	return bundler, nil
@@ -79,12 +82,17 @@ func (b *GzipBundler) Close() error {
 	return b.gzipWriter.Close()
 }
 
+// Type returns the static type of the bundler
+func (b *GzipBundler) Type() BundlerBackend {
+	return BundlerBackendTarGzip
+}
+
 // AddAssignmentToArchive implements writing the assignment's PDF to the tar archive
 func (b *GzipBundler) AddAssignment() error {
 	if b.tarWriter == nil {
 		return errors.New("writer not created yet")
 	}
-	assignmentPdfName := fmt.Sprintf("%s.pdf", b.AssignmentBase)
+	assignmentPdfName := fmt.Sprintf("%s.pdf", b.SourceDirectory)
 	src, err := os.Open(filepath.Join(b.ArtifactsDirectory, assignmentPdfName))
 	if err != nil {
 		return err
