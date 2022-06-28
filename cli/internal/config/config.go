@@ -1,76 +1,76 @@
 package config
 
 type Configuration struct {
-	Status *ConfigurationStatus `json:"status,omitempty"`
-	Spec   *ConfigurationSpec   `json:"spec,omitempty"`
+	Status *ConfigurationStatus `json:"status,omitempty" yaml:"status,omitempty"`
+	Spec   *ConfigurationSpec   `json:"spec,omitempty" yaml:"spec,omitempty"`
 }
 
 // ConfigurationSpec are the static configuration fields of an assignments environment
 type ConfigurationSpec struct {
 	// Course contains the course's name
-	Course string `json:"course,omitempty"`
+	Course string `json:"course,omitempty" yaml:"course,omitempty"`
 	// Group name of the members
-	Group string `json:"group,omitempty"`
+	Group string `json:"group,omitempty" yaml:"group,omitempty"`
 	// Includes contains additional includes into the LaTeX source file,
 	// relative to the repository's root
-	Includes []Include `json:"includes,omitempty"`
+	Includes []Include `json:"includes,omitempty" yaml:"includes,omitempty,flow"`
 	// Members are the group members
-	Members []GroupMember `json:"members,omitempty"`
+	Members []GroupMember `json:"members,omitempty" yaml:"members,omitempty,flow"`
 	// Template allows users to provide their own assignment template
 	// deviating from the default LaTeX source template
-	Template string `json:"template,omitempty"`
+	Template string `json:"template,omitempty" yaml:"template,omitempty"`
 	// GenerateOptions define options configured statically for generating new assignment directories
-	GenerateOptions *GenerateOptions `json:"generate,omitempty"`
+	GenerateOptions *GenerateOptions `json:"generate,omitempty" yaml:"generate,omitempty,flow"`
 	// BuildOptions are user options for the LaTeX build process
-	BuildOptions *BuildOptions `json:"build,omitempty"`
+	BuildOptions *BuildOptions `json:"build,omitempty" yaml:"build,omitempty,flow"`
 	// BundleOptions are user options for bundling
-	BundleOptions *BundleOptions `json:"bundle,omitempty"`
+	BundleOptions *BundleOptions `json:"bundle,omitempty" yaml:"bundle,omitempty,flow"`
 }
 
 type Include struct {
 	// Path defines a relative path for additional files to include in a TeX template
 	// They are included as literals in the template, thus should be relative to
 	// the assignment TeX file
-	Path string `json:"path"`
+	Path string `json:"path" yaml:"path"`
 }
 
 // BundleOptions contains configuration for bundling
 type BundleOptions struct {
 	// Format contains a go template for the filename of a bundle
-	Template string `json:"template"`
+	Template string `json:"template" yaml:"template"`
 	// Pass in arbitrary data for the template as a map
-	Data map[string]interface{} `json:"data"`
+	Data map[string]interface{} `json:"data" yaml:"data,flow"`
 	// Include defines a list of files to include in the bundle, supports globs
-	Include []string `json:"include,omitempty"`
+	Include []string `json:"include,omitempty" yaml:"include,omitempty,flow"`
 }
 
 type GenerateOptions struct {
 	// Create defines a list of bare directories to create when generating a new assignment
-	Create []string `json:"create,omitempty"`
+	Create []string `json:"create,omitempty" yaml:"create,omitempty,flow"`
 }
 
 type BuildOptions struct {
 	// Recipe is the specification of a LaTeX compiler program and its arguments
-	Recipe []Recipe `json:"recipe,omitempty"`
+	Recipe []Recipe `json:"recipe,omitempty" yaml:"recipe,omitempty,flow"`
 }
 
 type Recipe struct {
 	// Program name of the LaTeX compiler (or proxy) to use
-	Command string `json:"command"`
+	Command string `json:"command" yaml:"command"`
 	// Argument list for the compiler
-	Args []string `json:"args"`
+	Args []string `json:"args" yaml:"args,flow"`
 }
 
 // GroupMembers are part of an assignments group
 type GroupMember struct {
 	// Name is the group member's full name
-	Name string `json:"name"`
+	Name string `json:"name" yaml:"name"`
 	// ID is the group member's student ID or else
-	ID string `json:"id"`
+	ID string `json:"id" yaml:"id"`
 }
 
 // ConfigurationStatus contains the fields permutated by commands other than the bootstrapping
 type ConfigurationStatus struct {
 	// Assignment records the current assignment number
-	Assignment uint32 `json:"assignment"`
+	Assignment uint32 `json:"assignment" yaml:"assignment"`
 }
