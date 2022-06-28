@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -172,15 +171,9 @@ func (b *builder) makeArtifactsDirectory() error {
 	return nil
 }
 
-// assignmentNumber extracts the assignment number (with a leading zero already, thus string-typed)
-// from the target directory's name
+// assignmentNumber returns the assignment's number as a leading-zero string.
+// Returns error when util.AssignmentNumberFromFilename returns an error
 func (b *builder) assignmentNumber() (string, error) {
 	s := filepath.Base(b.TargetDirectory())
-	s = strings.ReplaceAll(s, "assignment-", "")
-	s = strings.ReplaceAll(s, ".pdf", "")
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		return "", err
-	}
-	return util.AddLeadingZero(uint32(i)), nil
+	return util.AssignmentNumberFromFilename(s)
 }
