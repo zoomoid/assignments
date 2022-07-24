@@ -8,23 +8,23 @@ type Configuration struct {
 // ConfigurationSpec are the static configuration fields of an assignments environment
 type ConfigurationSpec struct {
 	// Course contains the course's name
-	Course string `json:"course,omitempty" yaml:"course,omitempty"`
+	Course string `json:"course" yaml:"course"`
 	// Group name of the members
-	Group string `json:"group,omitempty" yaml:"group,omitempty"`
+	Group string `json:"group" yaml:"group"`
 	// Includes contains additional includes into the LaTeX source file,
 	// relative to the repository's root
-	Includes []Include `json:"includes,omitempty" yaml:"includes,omitempty,flow"`
+	Includes []Include `json:"includes" yaml:"includes,flow"`
 	// Members are the group members
-	Members []GroupMember `json:"members,omitempty" yaml:"members,omitempty,flow"`
+	Members []GroupMember `json:"members" yaml:"members,flow"`
 	// Template allows users to provide their own assignment template
 	// deviating from the default LaTeX source template
-	Template string `json:"template,omitempty" yaml:"template,omitempty"`
+	Template string `json:"template" yaml:"template"`
 	// GenerateOptions define options configured statically for generating new assignment directories
-	GenerateOptions *GenerateOptions `json:"generate,omitempty" yaml:"generate,omitempty,flow"`
+	GenerateOptions *GenerateOptions `json:"generate" yaml:"generate,flow"`
 	// BuildOptions are user options for the LaTeX build process
-	BuildOptions *BuildOptions `json:"build,omitempty" yaml:"build,omitempty,flow"`
+	BuildOptions *BuildOptions `json:"build" yaml:"build,flow"`
 	// BundleOptions are user options for bundling
-	BundleOptions *BundleOptions `json:"bundle,omitempty" yaml:"bundle,omitempty,flow"`
+	BundleOptions *BundleOptions `json:"bundle" yaml:"bundle,flow"`
 }
 
 type Include struct {
@@ -41,17 +41,17 @@ type BundleOptions struct {
 	// Pass in arbitrary data for the template as a map
 	Data map[string]interface{} `json:"data" yaml:"data,flow"`
 	// Include defines a list of files to include in the bundle, supports globs
-	Include []string `json:"include,omitempty" yaml:"include,omitempty,flow"`
+	Include []string `json:"include" yaml:"include,flow"`
 }
 
 type GenerateOptions struct {
 	// Create defines a list of bare directories to create when generating a new assignment
-	Create []string `json:"create,omitempty" yaml:"create,omitempty,flow"`
+	Create []string `json:"create" yaml:"create,flow"`
 }
 
 type BuildOptions struct {
 	// Recipe is the specification of a LaTeX compiler program and its arguments
-	Recipe []Recipe `json:"recipe,omitempty" yaml:"recipe,omitempty,flow"`
+	Recipe []Recipe `json:"recipe" yaml:"recipe,flow"`
 }
 
 type Recipe struct {

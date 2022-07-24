@@ -36,7 +36,7 @@ func TestGenerateDefaultAssignmentTemplate(t *testing.T) {
 		t.Fatalf(`GenerateAssignmentTemplate() should NOT return an error with this binding, %v`, err)
 	}
 
-	if len(o) == 0 {
+	if o.Len() == 0 {
 		t.Fatal(`GenerateAssignmentTemplate() should NOT return an empty string on this binding`)
 	}
 
@@ -85,7 +85,7 @@ func TestGenerateCustomAssignmentTemplate(t *testing.T) {
 		t.Fatalf(`GenerateAssignmentTemplate() should NOT return an error with this binding, %v`, err)
 	}
 
-	if len(o) == 0 {
+	if o.Len() == 0 {
 		t.Fatal(`GenerateAssignmentTemplate() should NOT return an empty string on this binding`)
 	}
 }

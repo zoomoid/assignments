@@ -194,7 +194,7 @@ func targetDirectoryFromFlag(file string) (string, string, error) {
 }
 
 func addBuildFlags(flags *pflag.FlagSet, data *buildData) {
-	flags.BoolVarP(&data.force, options.Force, options.ForceShort, false, "Override any existing assignments with the same name")
+	flags.BoolVar(&data.force, options.Force, false, "Override any existing assignments with the same name")
 	flags.BoolVarP(&data.all, options.All, options.AllShort, false, "Build all assignments in assignment-*/")
 	flags.BoolVar(&data.keep, options.Keep, false, "Skip latexmk -C cleaning up all files in the source directory")
 	flags.BoolVar(&data.quiet, options.Quiet, false, "Suppress output from latexmk subprocesses")

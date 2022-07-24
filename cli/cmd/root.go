@@ -74,10 +74,10 @@ func NewRootCommand(opts *rootOptions) *cobra.Command {
 	}
 
 	rootCmd := &cobra.Command{
-		Use:   "assignment",
-		Short: "assignments CLI for conveniently templating, building, and bundling course assignment",
-		Long:  rootLongDescription,
-
+		Use:              "assignmentctl",
+		Short:            "assignments CLI for conveniently templating, building, and bundling course assignment",
+		Long:             rootLongDescription,
+		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("assignments requires a subcommand to run")
 		},
@@ -103,7 +103,6 @@ func makeLogger(verbose bool) (*zap.SugaredLogger, error) {
 	var err error
 	if verbose {
 		l, err = zap.NewDevelopment()
-
 	} else {
 		l, err = zap.NewProduction()
 	}

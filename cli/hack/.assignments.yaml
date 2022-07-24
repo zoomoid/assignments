@@ -1,12 +1,13 @@
 spec:
-  course: "Linear Algebra I"
-  group: "Group Alpha"
-  members:
-    - id: "123456"
-      name: "Max Mustermann"
-    - id: "AB123456"
-      name: "Erika Mustermann"
-    - id: "69420"
-      name: "Kim Took"
+    course: Linear Algebra I
+    group: Group Alpha
+    members:
+        - id: "123456"
+          name: Max Mustermann
+        - id: AB123456
+          name: Erika Mustermann
+        - id: "69420"
+          name: Kim Took
+    template: ""
 status:
-  assignment: 1
+    assignment: 1

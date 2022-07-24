@@ -2,6 +2,7 @@ package template
 
 import (
 	"bytes"
+	"strings"
 	"text/template"
 
 	_ "embed"
@@ -12,7 +13,7 @@ import (
 )
 
 var (
-	defaultSheetTemplate = dedent.Dedent(`
+	defaultSheetTemplate = strings.TrimPrefix(dedent.Dedent(`
 		\documentclass{csassignments}
 		{{- range $_, $input := .Includes -}}
 		\input{ {{- $input -}} }
@@ -22,10 +23,11 @@ var (
 		\sheet{ {{- .Sheet | default "" -}} }
 		\due{ {{- .Due | default "" -}} }
 		{{- range $_, $member := .Members }}
-		{{- $firstname := ($member.Name | splitList " " | initial | join " ") | default "" -}}
-		{{- $lastname := ($member.Name | splitList " " | last) | default "" -}} 
+		{{- $firstname := ($member.Name | splitList " " | initial | join " ") | default "" }}
+		{{- $lastname := ($member.Name | splitList " " | last) | default "" }}
 		\member{ {{- $firstname -}} }{ {{- $lastname -}} }{ {{- $member.ID -}} }
-		{{ end }}
+		{{- end }}
+		
 		\begin{document}
 		\maketitle
 		\gradingtable
@@ -33,7 +35,7 @@ var (
 		% Start the assignment here
 		
 		\end{document}
-	`)
+	`), "\n")
 )
 
 type TemplateBinding struct {
@@ -46,8 +48,8 @@ type TemplateBinding struct {
 	Includes  []config.Include
 }
 
-func GenerateAssignmentTemplate(tpl *string, bindings *TemplateBinding) (string, error) {
-	if tpl == nil {
+func GenerateAssignmentTemplate(tpl *string, bindings *TemplateBinding) (*bytes.Buffer, error) {
+	if tpl == nil || *tpl == "" {
 		tpl = &defaultSheetTemplate
 	}
 	tmpl := template.Must(template.New("assignment").Funcs(sprig.TxtFuncMap()).Parse(*tpl))
@@ -57,7 +59,7 @@ func GenerateAssignmentTemplate(tpl *string, bindings *TemplateBinding) (string,
 	err := tmpl.Execute(&output, bindings)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return output.String(), nil
+	return &output, nil
 }

@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -107,7 +110,10 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 				}
 			}
 
-			due := promptDueDate()
+			due := data.due
+			if data.due == "" {
+				due = promptDueDate()
+			}
 
 			spec := ctx.Configuration.Spec
 
@@ -143,7 +149,10 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 			}
 
 			// create the additional directories defined in the spec
-			additionalDirectories := spec.GenerateOptions.Create
+			additionalDirectories := []string{}
+			if spec.GenerateOptions != nil {
+				additionalDirectories = spec.GenerateOptions.Create
+			}
 			for _, dir := range additionalDirectories {
 				err = os.Mkdir(filepath.Join(assignmentDirectory, dir), 0777)
 				if err != nil {
@@ -153,7 +162,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 
 			file := filepath.Join(assignmentDirectory, "assignment.tex")
 
-			err = os.WriteFile(file, []byte(sheetSource), 0644)
+			err = os.WriteFile(file, sheetSource.Bytes(), 0644)
 			if err != nil {
 				return err
 			}
@@ -178,7 +187,11 @@ func addGenerateFlags(flags *pflag.FlagSet, data *generateData) {
 
 func promptDueDate() string {
 	fmt.Print("⏱️  When is the assignment due? (e.g.,'April 20, 2021): ")
-	due := ""
-	fmt.Scanln("%s", due)
-	return due
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	input = strings.TrimSuffix(input, "\n")
+	return input
 }

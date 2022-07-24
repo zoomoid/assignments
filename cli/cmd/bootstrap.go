@@ -116,20 +116,19 @@ func addBootstrapFlags(flags *pflag.FlagSet, data *bootstrapData) {
 	flags.StringVar(&data.group, options.GroupName, "", "Group name")
 	flags.StringSliceVar(&data.members, options.Members, []string{}, "Group members, as comma-separated <Name>;<ID> tuples")
 	flags.StringSliceVar(&data.includes, options.Includes, []string{}, "Custom TeX includes for the template. Paths are relative to the REPOSITORY root, not the actual assignment source file")
-
 }
 
 func promptCourseName() string {
 	fmt.Print("❓ Please enter the course's name: ")
 	c := ""
-	fmt.Scanln("%s", c)
+	fmt.Scanln("%s", &c)
 	return c
 }
 
 func promptGroupName() string {
 	fmt.Print("❓ Please enter a group name (or leave empty to use nothing): ")
 	g := ""
-	fmt.Scanln("%s", g)
+	fmt.Scanln("%s", &g)
 	return g
 }
 
@@ -138,7 +137,7 @@ func promptMembers() []string {
 	for {
 		fmt.Print("❓ Please enter a group member's name followed by their student ID (e.g. Max Mustermann;123456), or press 'q' to move on: ")
 		rawMember := ""
-		fmt.Scanln("%s", rawMember)
+		fmt.Scanln("%s", &rawMember)
 		if rawMember == "q" {
 			break
 		}

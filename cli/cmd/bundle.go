@@ -157,7 +157,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 		},
 	}
 
-	addBundleFlags(bundleCommand.Flags(), data)
+	addBundleFlags(bundleCommand.LocalFlags(), data)
 
 	return bundleCommand
 }
