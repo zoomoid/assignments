@@ -2,6 +2,7 @@ package context
 
 import (
 	"os"
+	"path/filepath"
 
 	config "github.com/zoomoid/assignments/v1/internal/config"
 	zap "go.uber.org/zap"
@@ -29,7 +30,8 @@ type AppContext struct {
 
 // Read uses the context's root to read a configmap into the context's struct field
 func (c *AppContext) Read() error {
-	cfg, err := config.Read(c.Root)
+	p := filepath.Join(c.Root, ".assignments.yaml")
+	cfg, err := config.Read(p)
 	if err != nil {
 		return err
 	}
@@ -39,7 +41,8 @@ func (c *AppContext) Read() error {
 
 // Write writes the context's struct field to a file at the context's root
 func (c *AppContext) Write() error {
-	err := config.Write(c.Configuration, c.Root)
+	p := filepath.Join(c.Root, ".assignments.yaml")
+	err := config.Write(c.Configuration, p)
 	return err
 }
 

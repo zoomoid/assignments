@@ -1,14 +1,12 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -22,52 +20,31 @@ var (
 
 // Read reads in a config file an unmarshals it into a configuration struct
 func Read(path string) (*Configuration, error) {
-	if path == "" {
-		path = "."
-	}
-	viper.SetConfigFile(ConfigurationFileName)
-	viper.SetConfigType(ConfigurationFileType)
-	viper.AddConfigPath(path)
-
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("failed to read config file, %v", err)
-	}
-
 	config := &Configuration{}
-
-	err := viper.Unmarshal(config)
+	fd, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config with viper, %v", err)
+		return nil, err
+	}
+	in, err := io.ReadAll(fd)
+	if err != nil {
+		return nil, err
 	}
 
-	return config, nil
+	err = Unmarshal(in, config)
+	return config, err
 }
 
-// Write converts a configuration struct into a map for viper to write to the filesystem as config file
+// Write marshals a configuration struct into YAML and writes it to the designated file
 func Write(config *Configuration, path string) error {
-	if path == "" {
-		path = "."
-	}
-	viper.SetConfigFile(ConfigurationFileName)
-	viper.SetConfigType(ConfigurationFileType)
-	viper.AddConfigPath(path)
-
-	marshalledConfig, err := json.Marshal(config)
+	fd, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	var serializedConfig map[string]interface{}
-	err = json.Unmarshal(marshalledConfig, &serializedConfig)
+	out, err := Marshal(*config)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal to map, %v", err)
+		return err
 	}
-	viper.MergeConfigMap(serializedConfig)
-
-	isset := viper.IsSet("spec.course")
-	if !isset {
-		return fmt.Errorf("failed to marshal configuration for viper")
-	}
-	err = viper.WriteConfig()
+	_, err = fd.Write(out)
 	return err
 }
 

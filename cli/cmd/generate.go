@@ -143,6 +143,11 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 
 			// create the assignment's main directory
 			assignmentDirectory := fmt.Sprintf("assignment-%s", bindings.Sheet)
+			if data.force {
+				// when using --force to override any existing assignments, clean up before creating
+				// assignment directory from scratch
+				_ = os.RemoveAll(assignmentDirectory)
+			}
 			err = os.Mkdir(assignmentDirectory, 0777)
 			if err != nil {
 				return err
@@ -165,6 +170,10 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 			err = os.WriteFile(file, sheetSource.Bytes(), 0644)
 			if err != nil {
 				return err
+			}
+
+			if !data.noIncrement {
+				ctx.Configuration.Status.Assignment += 1
 			}
 
 			ctx.Logger.Infof("Generated assignment at %s", file)

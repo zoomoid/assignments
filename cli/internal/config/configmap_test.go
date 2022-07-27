@@ -24,6 +24,9 @@ spec:
       name: "Erika Mustermann"
     - id: "69420"
       name: "Kim Took"
+  generate:
+    create:
+      - figures
   includes:
     - path: ../include.tex
     - path: ../packages.tex

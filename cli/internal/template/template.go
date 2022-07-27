@@ -25,7 +25,7 @@ var (
 		{{- range $_, $member := .Members }}
 		{{- $firstname := ($member.Name | splitList " " | initial | join " ") | default "" }}
 		{{- $lastname := ($member.Name | splitList " " | last) | default "" }}
-		\member{ {{- $firstname -}} }{ {{- $lastname -}} }{ {{- $member.ID -}} }
+		\member[{{- $member.ID -}}]{ {{- $member.Name -}} }
 		{{- end }}
 		
 		\begin{document}
