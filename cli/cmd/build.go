@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lithammer/dedent"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
@@ -69,7 +70,9 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 
 	err := ctx.Read()
 	if err != nil {
-		ctx.Logger.Fatalf("Failed to read config file", err)
+		log.Fatal().
+			Err(err).
+			Msg("Failed to read config file")
 	}
 	defer ctx.Write()
 
@@ -133,26 +136,29 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 			for _, run := range runs {
 				runner, err := runner.New(ctx, &run)
 				if err != nil {
-					ctx.Logger.Errorf("failed to initialize runner for assignment %d in %s ", assignmentNo, run.Filename)
+					log.Error().Msgf("failed to initialize runner for assignment %d in %s", assignmentNo, run.Filename)
 					return err
 				}
 				err = runner.Build().Run()
 				if err != nil {
-					ctx.Logger.Errorf("run failed for assignment %d in %s, %v", assignmentNo, run.Filename, err)
-					ctx.Logger.Warnf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
+					log.Error().Err(err).Msgf("run failed for assignment %d in %s", assignmentNo, run.Filename)
+					log.Warn().Msgf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
 					return err
 				}
 
 				if !data.keep {
 					err = runner.Clean().Run()
 					if err != nil {
-						ctx.Logger.Errorf("failed to clean up for assignment %d in %s, %v", assignmentNo, run.Filename, err)
-						ctx.Logger.Warnf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
+						log.Error().Err(err).Msgf("failed to clean up for assignment %d in %s, %v", assignmentNo, run.Filename)
+						log.Warn().Msgf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
 						return err
 					}
 				}
 			}
-			ctx.Logger.Debug("Finished all build jobs successfully", "jobCount", len(runs), "duration", time.Since(startTime))
+			log.Debug().
+				Dur("duration", time.Since(startTime)).
+				Int("jobCount", len(runs)).
+				Msg("Finished all build jobs successfully")
 			return nil
 		},
 	}

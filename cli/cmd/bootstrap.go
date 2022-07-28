@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
@@ -62,7 +63,7 @@ func NewBootstrapCommand(ctx *context.AppContext, data *bootstrapData) *cobra.Co
 			for _, m := range data.members {
 				m, err := transformMember(m)
 				if err != nil {
-					ctx.Logger.Warn("group member name is illformed", "raw", m)
+					log.Warn().Interface("raw", m).Msg("group member name is illformed")
 					break
 				}
 				members = append(members, *m)

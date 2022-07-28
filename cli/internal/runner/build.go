@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/util"
 )
@@ -70,7 +71,7 @@ func (b *builder) MakeCommand() ([]*exec.Cmd, error) {
 // Run implements the Runner specification for running a set of commands in terms of building
 func (b *builder) Run() error {
 	startTime := time.Now()
-	b.logger.Debugf("[runner/build] Started building %s", filepath.Join(b.TargetDirectory(), b.filename))
+	log.Debug().Msgf("[runner/build] Started building %s", filepath.Join(b.TargetDirectory(), b.filename))
 
 	cmds, err := b.MakeCommand()
 	if err != nil {
@@ -87,15 +88,15 @@ func (b *builder) Run() error {
 			return err
 		}
 	}
-	b.logger.Debugf("[runner/build] Finished building %s in %v", filepath.Join(b.TargetDirectory(), b.filename), time.Since(startTime))
+	log.Debug().Msgf("[runner/build] Finished building %s in %v", filepath.Join(b.TargetDirectory(), b.filename), time.Since(startTime))
 
 	exportTime := time.Now()
-	b.logger.Debugf("[runner/export] Starting export of %s", filepath.Join(b.TargetDirectory(), b.filename))
+	log.Debug().Msgf("[runner/export] Starting export of %s", filepath.Join(b.TargetDirectory(), b.filename))
 	dest, err := b.exportArtifacts()
 	if err != nil {
 		return err
 	}
-	b.logger.Debugf("[runner/export] Finished exporting from %s to %s in %v", filepath.Join(b.targetDirectory, b.filename), dest, time.Since(exportTime))
+	log.Debug().Msgf("[runner/export] Finished exporting from %s to %s in %v", filepath.Join(b.targetDirectory, b.filename), dest, time.Since(exportTime))
 	return nil
 }
 
@@ -143,7 +144,7 @@ func (b *builder) exportArtifacts() (string, error) {
 		return "", err
 	}
 
-	b.logger.Debugf("[runner/export] Copied artifact PDF from %s to %s", srcPath, destPath)
+	log.Debug().Msgf("[runner/export] Copied artifact PDF from %s to %s", srcPath, destPath)
 
 	pdfPath, err := filepath.Abs(destPath)
 	if err != nil {
@@ -164,10 +165,10 @@ func (b *builder) makeArtifactsDirectory() error {
 		if err != nil {
 			return err
 		}
-		b.logger.Debugf("[runner/export] Created artifacts directory %s", d)
+		log.Debug().Msgf("[runner/export] Created artifacts directory %s", d)
 		return nil
 	}
-	b.logger.Debugf("[runner/export] Artifacts directory %s already exists, skipping creation...", d)
+	log.Debug().Msgf("[runner/export] Artifacts directory %s already exists, skipping creation...", d)
 	return nil
 }
 

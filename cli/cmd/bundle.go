@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/lithammer/dedent"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
@@ -71,7 +72,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 	err := ctx.Read()
 	defer ctx.Write()
 	if err != nil {
-		ctx.Logger.Fatalf("Failed to read config file", err)
+		log.Fatal().Err(err).Msg("Failed to read config file")
 	}
 
 	bundleCommand := &cobra.Command{
@@ -139,7 +140,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 				if err != nil {
 					if errors.Is(err, bundle.ErrArchiveExists) {
 						// only skip the current bundling, continue with other runs
-						ctx.Logger.Warnf("Archive %s already exists and --force is not specified, skipping...", bundler.ArchiveName())
+						log.Warn().Msgf("Archive %s already exists and --force is not specified, skipping...", bundler.ArchiveName())
 						break
 					}
 					return err
@@ -151,7 +152,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 
 				archiveName := bundler.ArchiveName()
 
-				ctx.Logger.Infof("Finished bundling assignment to %s in ./dist/", archiveName)
+				log.Info().Msgf("Finished bundling assignment to %s in ./dist/", archiveName)
 			}
 			return nil
 		},

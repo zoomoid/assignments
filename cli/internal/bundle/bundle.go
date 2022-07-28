@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/rs/zerolog/log"
 	"github.com/zoomoid/assignments/v1/internal/context"
 	"github.com/zoomoid/assignments/v1/internal/util"
 )
@@ -165,7 +166,7 @@ func (b *BundlerContext) ArchiveExists() bool {
 	_, err := os.Stat(filepath.Join(b.artifactsDirectory, b.archiveName))
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
-			b.Logger.Warnf("failed to stat %s with error other than ErrNotExist, %v", filepath.Join(b.artifactsDirectory, b.archiveName), err)
+			log.Warn().Msgf("failed to stat %s with error other than ErrNotExist, %v", filepath.Join(b.artifactsDirectory, b.archiveName), err)
 		}
 		return false
 	}

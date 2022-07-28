@@ -91,7 +91,6 @@ func makeAppContext(root string) (*context.AppContext, error) {
 	}
 	defer l.Sync()
 	return &context.AppContext{
-		Logger:        l.Sugar(),
 		Cwd:           root,
 		Root:          root,
 		Configuration: &cfg,

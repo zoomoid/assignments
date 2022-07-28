@@ -11,8 +11,6 @@ import (
 // AppContext is initialized by a cobra command and carried through the application
 // to provide a shared space of root-level configuration
 type AppContext struct {
-	// Logger is the shared application zap logger
-	Logger *zap.SugaredLogger
 	// Cwd is the working directory from which the command was invoked
 	Cwd string
 	// Root is the repository's root, either the Cwd, or any directory *above*
@@ -52,14 +50,12 @@ func (c *AppContext) Clone() *AppContext {
 		Cwd:           c.Cwd,
 		Root:          c.Root,
 		Configuration: c.Configuration.Clone(),
-		Logger:        c.Logger, // don't actually clone the zap logger, this is fine to be aliased by all contexts
 	}
 	return nc
 }
 
 // NewDevelopment creates a new AppContext with development logger from scratch
 func NewDevelopment() (context *AppContext, err error) {
-	logger, err := newLogger(false)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +64,6 @@ func NewDevelopment() (context *AppContext, err error) {
 		return nil, err
 	}
 	return &AppContext{
-		Logger:        logger,
 		Configuration: nil,
 		Cwd:           cwd,
 		Root:          cwd,
@@ -77,7 +72,6 @@ func NewDevelopment() (context *AppContext, err error) {
 
 // NewProduction creates a new AppContext with production logger from scratch
 func NewProduction() (context *AppContext, err error) {
-	logger, err := newLogger(true)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +80,6 @@ func NewProduction() (context *AppContext, err error) {
 		return nil, err
 	}
 	return &AppContext{
-		Logger:        logger,
 		Configuration: nil,
 		Cwd:           cwd,
 		Root:          cwd,

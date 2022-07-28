@@ -1,17 +1,16 @@
 package cmd
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/lithammer/dedent"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/zoomoid/assignments/v1/cmd/options"
 	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
-	"go.uber.org/zap"
 )
 
 var (
@@ -22,13 +21,6 @@ var (
 )
 
 func Execute() {
-
-	// parse verbose flag early
-	var verbose bool
-	flag.BoolVar(&verbose, options.VerboseShort, false, "Prints debug logs")
-	// TODO: check if this break further flag parsing in pflags
-	flag.Parse()
-
 	// program's working directory
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -45,7 +37,7 @@ func Execute() {
 	rootCmd := NewRootCommand(&rootOptions{
 		root:    cfgPath,
 		cwd:     pwd,
-		verbose: verbose,
+		verbose: false,
 	})
 
 	if err := rootCmd.Execute(); err != nil {
@@ -61,16 +53,11 @@ type rootOptions struct {
 
 type rootData struct {
 	*rootOptions
-	logger *zap.SugaredLogger
 }
 
 func NewRootCommand(opts *rootOptions) *cobra.Command {
-
-	logger, _ := makeLogger(opts.verbose)
-
 	data := &rootData{
 		rootOptions: opts,
-		logger:      logger,
 	}
 
 	rootCmd := &cobra.Command{
@@ -78,17 +65,26 @@ func NewRootCommand(opts *rootOptions) *cobra.Command {
 		Short:            "assignments CLI for conveniently templating, building, and bundling course assignment",
 		Long:             rootLongDescription,
 		TraverseChildren: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if data.verbose {
+				zerolog.SetGlobalLevel(zerolog.DebugLevel)
+			} else {
+				zerolog.SetGlobalLevel(zerolog.InfoLevel)
+			}
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("assignments requires a subcommand to run")
 		},
+		SilenceUsage: true,
 	}
 
 	ctx := &context.AppContext{
-		Logger:        data.logger,
 		Cwd:           data.cwd,
 		Root:          data.root,
 		Configuration: nil,
 	}
+
+	rootCmd.Flags().BoolVarP(&data.verbose, options.Verbose, options.VerboseShort, false, "Sets logging verbosity level to high")
 
 	rootCmd.AddCommand(NewBootstrapCommand(ctx, nil))
 	rootCmd.AddCommand(NewGenerateCommand(ctx, nil))
@@ -96,19 +92,4 @@ func NewRootCommand(opts *rootOptions) *cobra.Command {
 	rootCmd.AddCommand(NewBundleCommand(ctx, nil))
 
 	return rootCmd
-}
-
-func makeLogger(verbose bool) (*zap.SugaredLogger, error) {
-	var l *zap.Logger
-	var err error
-	if verbose {
-		l, err = zap.NewDevelopment()
-	} else {
-		l, err = zap.NewProduction()
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer l.Sync()
-	return l.Sugar(), nil
 }

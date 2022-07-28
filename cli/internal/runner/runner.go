@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/rs/zerolog/log"
 	"github.com/zoomoid/assignments/v1/internal/config"
 	"github.com/zoomoid/assignments/v1/internal/context"
 	"go.uber.org/zap"
@@ -60,7 +61,6 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 		root:          runnerCtx.Root,
 		cwd:           runnerCtx.Cwd,
 		configuration: runnerCtx.Configuration,
-		logger:        runnerCtx.Logger,
 	}
 
 	if options.TargetDirectory == "" {
@@ -85,7 +85,7 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 func NewMust(context *context.AppContext, options *RunnerOptions) *RunnerContext {
 	r, err := New(context, options)
 	if err != nil {
-		context.Logger.Fatalf("Failed to create runner context, %v", err)
+		log.Fatal().Err(err).Msg("Failed to create runner context")
 	}
 	return r
 }

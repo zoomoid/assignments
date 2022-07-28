@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/rs/zerolog/log"
 )
 
 type cleaner struct {
@@ -33,7 +35,7 @@ func (c *cleaner) MakeCommand() ([]*exec.Cmd, error) {
 
 // Run implements the Runner spec in terms of running the cleanup command in shell
 func (c *cleaner) Run() error {
-	c.logger.Debug("[runner/clean] Cleaning up %s using latexmk", c.TargetDirectory())
+	log.Debug().Msgf("[runner/clean] Cleaning up %s using latexmk", c.TargetDirectory())
 
 	cmds, err := c.MakeCommand()
 	if err != nil {
@@ -50,6 +52,6 @@ func (c *cleaner) Run() error {
 			return err
 		}
 	}
-	c.logger.Debug("[runner/clean] Finished cleanup %s with latexmk", c.TargetDirectory())
+	log.Debug().Msgf("[runner/clean] Finished cleanup %s with latexmk", c.TargetDirectory())
 	return nil
 }

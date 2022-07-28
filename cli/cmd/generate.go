@@ -3,12 +3,12 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/zoomoid/assignments/v1/cmd/options"
@@ -93,7 +93,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 
 	err := ctx.Read()
 	if err != nil {
-		ctx.Logger.Fatalf("Failed to read config file, %v", err)
+		log.Fatal().Err(err).Msg("Failed to read config file")
 	}
 
 	generateCmd := &cobra.Command{
@@ -176,7 +176,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 				ctx.Configuration.Status.Assignment += 1
 			}
 
-			ctx.Logger.Infof("Generated assignment at %s", file)
+			log.Info().Msgf("Generated assignment at %s", file)
 
 			defer ctx.Write()
 			return nil
@@ -199,7 +199,7 @@ func promptDueDate() string {
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 	}
 	input = strings.TrimSuffix(input, "\n")
 	return input
