@@ -95,7 +95,7 @@ in your command line.
 In a fresh directory (or repository), run
 
 ```bash
-$ assignments bootstrap
+$ assignmentctl bootstrap
 ```
 
 If no further flags are set, the CLI will prompt you for several properties, namely:
@@ -155,11 +155,11 @@ Run
 
 ```bash
 # Compile a specific assignment
-$ assignments build $ASSIGNMENT_NO
+$ assignmentctl build $ASSIGNMENT_NO
 # Compile *all* assignments
-$ assignments build --all
+$ assignmentctl build --all
 # Compile an assignment and override any already existing artifacts
-$ assignments build --force $ASSIGNMENT_NO
+$ assignmentctl build --force $ASSIGNMENT_NO
 ```
 
 ## Tooling
