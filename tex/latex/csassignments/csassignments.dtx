@@ -30,7 +30,7 @@
 %</driver>
 %    \begin{macrocode}
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{csassignments}[2022/06/01 v1.0.0 Assignments Class for CS]
+\ProvidesClass{csassignments}[2022/07/28 v1.0.2 Assignments Class for CS]
 %    \end{macrocode}
 %
 %<*driver>
@@ -73,6 +73,7 @@
 %
 % \changes{v1.0.0}{2022/06/01}{Publish class with documentation}
 % \changes{v1.0.1}{2022/06/07}{Rename class to not collide with existing assignments class}
+% \changes{v1.0.2}{2022/07/28}{Fix a bug where verb+\ClassWarning+ lacked the right number of arguments}
 %
 % \GetFileInfo{csassignments.cls}
 %
@@ -82,7 +83,7 @@
 % \maketitle
 % \tableofcontents
 %
-% \StopEventually{}    ^^A
+% \StopEventually{} ^^A
 %
 % \section{Introduction}
 % 
@@ -279,8 +280,8 @@
       \end{tabular}
       \renewcommand{\arraystretch}{1}%
     \end{table}
-  }{\texttt{Compile again}\ClassWarning{Compile again to properly 
-  display grading table}}
+  }{\texttt{Compile again}\ClassWarning{csassignments}{Compile again to %
+  properly display grading table}}
 }
 %    \end{macrocode}
 % \end{macro}
