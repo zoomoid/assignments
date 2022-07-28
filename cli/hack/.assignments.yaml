@@ -1,5 +1,5 @@
 status:
-  assignment: 3
+  assignment: 2
 spec:
   course: Linear Algebra I
   group: Group Alpha
@@ -19,8 +19,13 @@ spec:
     - figures
   build:
     recipe:
-    - command: latexmk
+    - command: latexmk.exe
       args:
-      - -f
+      - -interaction=nonstopmode
       - -pdf
-  bundle: null
+      - -file-line-error
+      - -shell-escape
+  bundle:
+    template: ""
+    data: {}
+    include: []
