@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,8 +52,8 @@ type Bundler interface {
 type BundlerOptions struct {
 	// Backend selects the bundling backend to use
 	Backend BundlerBackend
-	// Template is a string pointer to the template to be used for the filename
-	Template *string
+	// Template is a string template to be used for the filename
+	Template string
 	// Data contains any data bindings required for the template execution
 	// Users should ensure that the data matches the template, otherwise template
 	// execution will fail ungracefully
@@ -91,12 +92,7 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 	sourceDirectory := strings.ReplaceAll(options.Target, ".pdf", "")
 	base := filepath.Join(ctx.Root, sourceDirectory)
 
-	additionalFiles, err := additionalFiles(options.Includes, sourceDirectory)
-	if err != nil {
-		return nil, err
-	}
-
-	archiveName, err := makeArchiveName(options.Template, options.Data, options.Backend)
+	additionalFiles, err := additionalFiles(base, options.Includes)
 	if err != nil {
 		return nil, err
 	}
@@ -104,14 +100,19 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 	data := options.Data
 	if data == nil {
 		data = make(map[string]interface{})
-		id, err := util.AssignmentNumberFromFilename(filepath.Base(options.Target))
-		if err != nil {
-			return nil, err
-		}
-		data["_id"] = id
 	}
+	id, err := util.AssignmentNumberFromFilename(filepath.Base(options.Target))
+	if err != nil {
+		return nil, err
+	}
+	data["_id"] = id
 	if _, ok := data["format"]; !ok {
 		data["format"] = format(options.Backend)
+	}
+
+	archiveName, err := makeArchiveName(options.Template, data, options.Backend)
+	if err != nil {
+		return nil, err
 	}
 
 	bundlerCtx := ctx.Clone()
@@ -195,7 +196,6 @@ func (b *BundlerContext) makeBundler() (Bundler, error) {
 		})
 		return bundler, err
 	case BundlerBackendZip:
-	default:
 		bundler, err := NewZipBundler(&b.AppContext, b.files, &ZipBundlerOptions{
 			ArchiveName:        b.archiveName,
 			ArtifactsDirectory: b.artifactsDirectory,
@@ -215,23 +215,23 @@ func (b *BundlerContext) makeBundler() (Bundler, error) {
 //
 // If executing the glob pattern fails, additionalFiles returns nil and an error containing
 // the pattern that failed to glob.
-func additionalFiles(includes []string, sourceDirectory string) ([]string, error) {
+func additionalFiles(sourceDirectory string, includes []string) ([]string, error) {
 	additionalFiles := make([]string, 0)
 	for _, f := range includes {
-		if strings.Contains(f, "*") {
-			// f is a glob pattern
-			files, err := filepath.Glob(filepath.Join(sourceDirectory, f))
-			if err != nil {
-				return nil, fmt.Errorf("malformed glob pattern in %s", f)
+		if _, err := os.Stat(f); errors.Is(err, fs.ErrNotExist) {
+			p := filepath.Join(sourceDirectory, f)
+			matches, err := filepath.Glob(p)
+			if err == nil && len(matches) == 0 {
+				// return nil, fmt.Errorf("the path %q does not exist", pattern)
+				return []string{}, nil
 			}
-			// append all globbed files to the list of additional files
-			additionalFiles = append(additionalFiles, files...)
-		} else {
-			if !strings.HasSuffix(f, string(filepath.Separator)) {
-				// f likely is a file, append it
-				additionalFiles = append(additionalFiles, filepath.Join(sourceDirectory, f))
-			} // otherwise f is a directory, which, if it does not contain a glob pattern, will be ignored
+			if err == filepath.ErrBadPattern {
+				return nil, fmt.Errorf("patterns %q is not valid: %w", f, err)
+			}
+			additionalFiles = append(additionalFiles, matches...)
+			continue
 		}
+		additionalFiles = append(additionalFiles, f)
 	}
 	return additionalFiles, nil
 }
@@ -239,12 +239,12 @@ func additionalFiles(includes []string, sourceDirectory string) ([]string, error
 // makeArchiveName executes the template with the data given in the config file
 // Returns the archive's filename when successfully executed the template, otherwise
 // returns the occurred error and an empty string
-func makeArchiveName(tpl *string, data map[string]interface{}, backend BundlerBackend) (string, error) {
-	if tpl == nil {
-		tpl = &defaultArchiveNameTemplate
+func makeArchiveName(tpl string, data map[string]interface{}, backend BundlerBackend) (string, error) {
+	if tpl == "" {
+		tpl = defaultArchiveNameTemplate
 	}
 
-	tmpl := template.Must(template.New("bundleName").Funcs(sprig.TxtFuncMap()).Parse(*tpl))
+	tmpl := template.Must(template.New("bundleName").Funcs(sprig.TxtFuncMap()).Parse(tpl))
 	var output bytes.Buffer
 
 	err := tmpl.Execute(&output, data)
@@ -261,12 +261,11 @@ func makeArchiveName(tpl *string, data map[string]interface{}, backend BundlerBa
 func format(backend BundlerBackend) BundlerBackend {
 	// no format override in map, derive from chosen backend
 	switch backend {
-	case BundlerBackendTar:
-	case BundlerBackendZip:
-	case BundlerBackendTarGzip:
+	case BundlerBackendTar,
+		BundlerBackendZip,
+		BundlerBackendTarGzip:
 		return backend
 	default:
 		return ""
 	}
-	return ""
 }
