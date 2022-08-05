@@ -72,7 +72,7 @@ var (
 				},
 			},
 			BuildOptions: &config.BuildOptions{
-				Recipe: []config.Recipe{{
+				BuildRecipe: &config.Recipe{{
 					Command: "pdflatex",
 					Args:    []string{"-interaction=nonstopmode", "-file-line-error"},
 				}},

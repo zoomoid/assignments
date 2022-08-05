@@ -36,6 +36,7 @@ type RunnerContext struct {
 	overrideArtifacts  bool
 	targetDirectory    string
 	artifactsDirectory string
+	continueOnError    bool
 	Commands           []*exec.Cmd
 }
 
@@ -48,7 +49,14 @@ type Runner interface {
 
 var (
 	defaultProgram        = "latexmk"
-	defaultLatexmkOptions = []string{"-pdf", "-interaction=nonstopmode", "-file-line-error", "-shell-escape"}
+	defaultLatexmkOptions = []string{
+		"-pdf",
+		"-interaction=nonstopmode",
+		"-file-line-error",
+		"-shell-escape",
+		"-outdir={{OUTDIR}}",
+		"{{DOC}}",
+	}
 )
 
 // New creates a new runner context from the given parameters and applies sensible defaults
@@ -68,6 +76,10 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 		runner.targetDirectory = context.Cwd
 	} else {
 		runner.targetDirectory = options.TargetDirectory
+	}
+
+	if options.OverrideArtifacts {
+		runner.overrideArtifacts = true
 	}
 
 	runner.artifactsDirectory = "dist"
@@ -128,9 +140,34 @@ func (r *RunnerContext) Build() *builder {
 	return b
 }
 
-func (r *RunnerContext) Clean() *cleaner {
-	c := &cleaner{RunnerContext: r}
-	return c
+func (r *RunnerContext) Clean() Cleaner {
+
+	c := r.configuration.Spec.BuildOptions.Cleanup
+	if c == nil {
+		return &dummyCleaner{}
+	}
+
+	if c.Command == nil && c.Glob == nil {
+		log.Debug().Msg("No cleaner specified but field is not nil, falling back to default cleaner")
+		c = DefaultCleaner
+		r.configuration.Spec.BuildOptions.Cleanup = c
+	}
+
+	if c.Command != nil {
+		c := &cmdCleaner{RunnerContext: r}
+		return c
+	}
+
+	if c.Glob != nil {
+		c := &globCleaner{RunnerContext: r}
+		return c
+	}
+	return &dummyCleaner{}
+}
+
+func (r *RunnerContext) ContinueOnError() *RunnerContext {
+	r.continueOnError = true
+	return r
 }
 
 func (r *RunnerContext) ArtifactsDirectory() string {
