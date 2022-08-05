@@ -83,7 +83,7 @@ func (b *ZipBundler) AddAssignment() error {
 	if b.writer == nil {
 		return errors.New("writer not created yet")
 	}
-	assignmentPdfName := fmt.Sprintf("%s.pdf", b.SourceDirectory)
+	assignmentPdfName := fmt.Sprintf("%s.pdf", filepath.Base(b.SourceDirectory))
 	src, err := os.Open(filepath.Join(b.ArtifactsDirectory, assignmentPdfName))
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (b *ZipBundler) addAuxilliaryFile(filename string) error {
 	if b.writer == nil {
 		return errors.New("writer not created yet")
 	}
-	file, err := os.Open(filepath.Join(b.sourceDirectory, filename))
+	file, err := os.Open(filename)
 	if err != nil {
 		return err
 	}

@@ -92,7 +92,7 @@ func (b *GzipBundler) AddAssignment() error {
 	if b.tarWriter == nil {
 		return errors.New("writer not created yet")
 	}
-	assignmentPdfName := fmt.Sprintf("%s.pdf", b.SourceDirectory)
+	assignmentPdfName := fmt.Sprintf("%s.pdf", filepath.Base(b.SourceDirectory))
 	src, err := os.Open(filepath.Join(b.ArtifactsDirectory, assignmentPdfName))
 	if err != nil {
 		return err
