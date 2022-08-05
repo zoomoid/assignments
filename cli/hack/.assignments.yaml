@@ -1,9 +1,6 @@
-status:
-  assignment: 2
 spec:
   course: Linear Algebra I
   group: Group Alpha
-  includes: []
   members:
   - name: Max Mustermann
     id: "123456"
@@ -11,7 +8,6 @@ spec:
     id: AB123456
   - name: Kim Took
     id: "69420"
-  template: ""
   generate:
     create:
     - code
@@ -25,7 +21,19 @@ spec:
       - -pdf
       - -file-line-error
       - -shell-escape
+      - -outdir="{{.OUTDIR}}"
+      - '{{.DOC}}'
+    cleanup:
+      glob: {}
   bundle:
-    template: ""
-    data: {}
-    include: []
+    template: assignment-{{._id}}_{{.member1}}_{{.member2}}_{{.member3}}.{{.format}}
+    data:
+      member1: 123456
+      member2: AB123456
+      member3: 69420
+    include:
+    - code/**
+    - feedback/**
+    - figures/**
+status:
+  assignment: 4
