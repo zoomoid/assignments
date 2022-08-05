@@ -70,14 +70,26 @@ func (b *Include) Clone() Include {
 	}
 }
 
-func (r *Recipe) Clone() Recipe {
+func (t *Tool) Clone() Tool {
 	na := []string{}
-	na = append(na, r.Args...)
+	na = append(na, t.Args...)
 
-	return Recipe{
-		Command: r.Command,
+	return Tool{
+		Command: t.Command,
 		Args:    na,
 	}
+}
+
+func (r Recipe) Clone() *Recipe {
+	nr := Recipe{}
+	for _, t := range r {
+		nr = append(nr, t.Clone())
+	}
+	return &nr
+}
+
+func (r Recipe) Len() int {
+	return len(r)
 }
 
 func (g *GenerateOptions) Clone() *GenerateOptions {
@@ -90,12 +102,47 @@ func (g *GenerateOptions) Clone() *GenerateOptions {
 }
 
 func (b *BuildOptions) Clone() *BuildOptions {
-	nr := []Recipe{}
-	for _, r := range b.Recipe {
-		nr = append(nr, r.Clone())
-	}
 	return &BuildOptions{
-		Recipe: nr,
+		BuildRecipe: b.BuildRecipe.Clone(),
+		Cleanup:     b.Cleanup.Clone(),
+	}
+}
+
+func (gc *CleanupOptions) Clone() *CleanupOptions {
+	var ng *CleanupGlobOptions
+	var nc *CleanupCommandOptions
+
+	if gc == nil {
+		return nil
+	}
+
+	if gc.Command != nil {
+		nc = gc.Command.Clone()
+	}
+
+	if gc.Glob != nil {
+		ng = gc.Glob.Clone()
+	}
+
+	return &CleanupOptions{
+		Glob:    ng,
+		Command: nc,
+	}
+}
+
+func (gc *CleanupGlobOptions) Clone() *CleanupGlobOptions {
+	np := []string{}
+	np = append(np, gc.Patterns...)
+
+	return &CleanupGlobOptions{
+		Recursive: gc.Recursive,
+		Patterns:  np,
+	}
+}
+
+func (gc *CleanupCommandOptions) Clone() *CleanupCommandOptions {
+	return &CleanupCommandOptions{
+		Recipe: gc.Recipe.Clone(),
 	}
 }
 
