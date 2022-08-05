@@ -100,6 +100,12 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				return errors.New("cannot use -f flag with specific assignment")
 			}
 
+			if ctx.Configuration.Spec.BuildOptions.Cleanup != nil &&
+				ctx.Configuration.Spec.BuildOptions.Cleanup.Command != nil &&
+				ctx.Configuration.Spec.BuildOptions.Cleanup.Glob != nil {
+				return errors.New("found ambiguous cleanup mode, only use either glob or command")
+			}
+
 			if data.all {
 				directories, err := filepath.Glob(filepath.Join(ctx.Root, "assignment-*"))
 				if err != nil {
@@ -136,12 +142,12 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 			for _, run := range runs {
 				runner, err := runner.New(ctx, &run)
 				if err != nil {
-					log.Error().Msgf("failed to initialize runner for assignment %d in %s", assignmentNo, run.Filename)
+					log.Error().Msgf("failed to initialize runner for %s", run.Filename)
 					return err
 				}
 				err = runner.Build().Run()
 				if err != nil {
-					log.Error().Err(err).Msgf("run failed for assignment %d in %s", assignmentNo, run.Filename)
+					log.Error().Err(err).Msgf("run failed for %s", run.Filename)
 					log.Warn().Msgf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
 					return err
 				}
@@ -149,7 +155,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				if !data.keep {
 					err = runner.Clean().Run()
 					if err != nil {
-						log.Error().Err(err).Msgf("failed to clean up for assignment %d in %s, %v", assignmentNo, run.Filename)
+						log.Error().Err(err).Msgf("failed to clean up for %s", run.Filename)
 						log.Warn().Msgf("Leaving working directory %s dirty, might require manual cleanup", run.TargetDirectory)
 						return err
 					}
