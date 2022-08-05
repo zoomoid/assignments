@@ -105,18 +105,21 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 				}
 			}
 
-			var template *string = nil
-			if ctx.Configuration.Spec.BuildOptions != nil && ctx.Configuration.Spec.BundleOptions.Template == "" {
-				template = &ctx.Configuration.Spec.BundleOptions.Template
+			var template string
+			if ctx.Configuration.Spec.BundleOptions != nil && ctx.Configuration.Spec.BundleOptions.Template != "" {
+				template = ctx.Configuration.Spec.BundleOptions.Template
 			}
 
-			templateBindings := ctx.Configuration.Spec.BundleOptions.Data
-			templateBindings["_id"] = assignmentNo
+			templateBindings := make(map[string]interface{})
+			if ctx.Configuration.Spec.BundleOptions != nil && ctx.Configuration.Spec.BundleOptions.Data != nil {
+				templateBindings = ctx.Configuration.Spec.BundleOptions.Data
+			}
+			templateBindings["_id"] = util.AddLeadingZero(assignmentNo)
 
 			bundleRuns := []string{}
 
 			if !data.all {
-				assignment := fmt.Sprintf("assignments-%s.pdf", util.AddLeadingZero(assignmentNo))
+				assignment := fmt.Sprintf("assignment-%s.pdf", util.AddLeadingZero(assignmentNo))
 				bundleRuns = append(bundleRuns, assignment)
 			} else {
 				assignments, err := filepath.Glob(filepath.Join(ctx.Root, "dist", "assignment-*.pdf"))
@@ -128,13 +131,18 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 				}
 			}
 
+			includes := []string{}
+			if ctx.Configuration.Spec.BundleOptions != nil && ctx.Configuration.Spec.BundleOptions.Include != nil {
+				includes = ctx.Configuration.Spec.BundleOptions.Include
+			}
+
 			for _, file := range bundleRuns {
 				opts := &bundle.BundlerOptions{
 					Backend:  backend,
 					Template: template,
 					Data:     templateBindings,
 					Target:   filepath.Base(file),
-					Includes: ctx.Configuration.Spec.BundleOptions.Include,
+					Includes: includes,
 				}
 				bundler, err := bundle.New(ctx, opts)
 				if err != nil {
@@ -158,7 +166,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 		},
 	}
 
-	addBundleFlags(bundleCommand.LocalFlags(), data)
+	addBundleFlags(bundleCommand.Flags(), data)
 
 	return bundleCommand
 }
