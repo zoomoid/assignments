@@ -1,8 +1,6 @@
 package runner
 
 import (
-	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -21,17 +19,18 @@ type builder struct {
 	*RunnerContext
 }
 
-// Compile-time type checking of Runner spec
-var _ Runner = &builder{}
+type Builder interface {
+	Runner
+}
 
 // MakeCommand implements the Runner spec in terms of transforming a given recipe into a
 // slice of exec.Cmd, or using the default recipe
 func (b *builder) MakeCommand() ([]*exec.Cmd, error) {
-	recipe := b.configuration.Spec.BuildOptions.Recipe
+	recipe := b.configuration.Spec.BuildOptions.BuildRecipe
 
-	if len(recipe) == 0 {
+	if len(*recipe) == 0 {
 		// use the default latexmk recipe
-		recipe = []config.Recipe{
+		recipe = &config.Recipe{
 			{
 				Command: defaultProgram,
 				Args:    defaultLatexmkOptions,
@@ -39,33 +38,8 @@ func (b *builder) MakeCommand() ([]*exec.Cmd, error) {
 		}
 	}
 
-	cmds := []*exec.Cmd{}
-	for i, tool := range recipe {
-		if tool.Command == "" {
-			return nil, fmt.Errorf("failed to make build commands, missing program in recipe step %d", i)
-		}
-		program := tool.Command
-		args := []string{}
-		if len(tool.Args) > 0 {
-			args = tool.Args
-		}
-
-		args = append(args, filepath.ToSlash(b.Filename()))
-		cmd := exec.Command(program, args...)
-		out := &bytes.Buffer{}
-
-		if b.Quiet() {
-			sink := bufio.NewWriter(out)
-			cmd.Stdout = sink
-		} else {
-			cmd.Stdout = os.Stdout
-		}
-		cmd.Dir = b.TargetDirectory()
-
-		cmds = append(cmds, cmd)
-	}
-
-	return cmds, nil
+	cmds, err := commandsFromRecipe(recipe, b.TargetDirectory(), b.Filename(), b.Quiet())
+	return cmds, err
 }
 
 // Run implements the Runner specification for running a set of commands in terms of building

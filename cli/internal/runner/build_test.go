@@ -91,14 +91,14 @@ func TestBuildRunner(t *testing.T) {
 				return
 			}
 			cmd := cmds[0]
-			program := r.configuration.Spec.BuildOptions.Recipe[0].Command
+			program := (*r.configuration.Spec.BuildOptions.BuildRecipe)[0].Command
 			if cmd.Args[0] != program {
 				t.Error(fmt.Errorf("cmd runs %s, expected %s", cmd.Args[0], program))
 				return
 			}
 		})
 		t.Run("empty recipe", func(t *testing.T) {
-			r.configuration.Spec.BuildOptions.Recipe = []config.Recipe{}
+			r.configuration.Spec.BuildOptions.BuildRecipe = &config.Recipe{}
 			cmds, err := r.MakeCommand()
 			if err != nil {
 				t.Error(err)
@@ -117,7 +117,7 @@ func TestBuildRunner(t *testing.T) {
 			}
 		})
 		t.Run("pdflatex -> bibtex -> pdflatex recipe", func(t *testing.T) {
-			r.configuration.Spec.BuildOptions.Recipe = []config.Recipe{{
+			r.configuration.Spec.BuildOptions.BuildRecipe = &config.Recipe{{
 				Command: "pdflatex",
 				Args:    []string{"-interaction=nonstopmode", "-file-line-error"},
 			}, {
@@ -132,12 +132,12 @@ func TestBuildRunner(t *testing.T) {
 				return
 			}
 			// defaults to single latexmk run
-			if len(cmds) != len(r.configuration.Spec.BuildOptions.Recipe) {
-				t.Error(fmt.Errorf("cmds is of length %d, expected %d ", len(cmds), len(r.configuration.Spec.BuildOptions.Recipe)))
+			if len(cmds) != len(*r.configuration.Spec.BuildOptions.BuildRecipe) {
+				t.Error(fmt.Errorf("cmds is of length %d, expected %d ", len(cmds), len(*r.configuration.Spec.BuildOptions.BuildRecipe)))
 				return
 			}
 			cmd := cmds[0]
-			expected := r.configuration.Spec.BuildOptions.Recipe[0].Command
+			expected := (*r.configuration.Spec.BuildOptions.BuildRecipe)[0].Command
 			if cmd.Args[0] != expected {
 				t.Error(fmt.Errorf("cmd runs %s, expected %s", cmd.Args[0], expected))
 				return
