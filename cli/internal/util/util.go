@@ -8,7 +8,7 @@ import (
 
 const (
 	// Regex pattern for matching filenames against
-	AssignmentPattern string = "^assignment-([0-9]+)$"
+	AssignmentPattern string = "^assignment-([0-9]+).pdf$"
 )
 
 // addLeadingZero prepends numbers smaller than 10 with a leading zero
