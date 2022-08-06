@@ -86,7 +86,7 @@ func NewBootstrapCommand(ctx *context.AppContext, data *bootstrapData) *cobra.Co
 		},
 	}
 
-	addBootstrapFlags(bootstrapCommand.Flags(), data)
+	addBootstrapFlags(bootstrapCommand.PersistentFlags(), data)
 
 	return bootstrapCommand
 }

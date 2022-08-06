@@ -84,12 +84,13 @@ func NewRootCommand(opts *rootOptions) *cobra.Command {
 		Configuration: nil,
 	}
 
-	rootCmd.Flags().BoolVarP(&data.verbose, options.Verbose, options.VerboseShort, false, "Sets logging verbosity level to high")
+	rootCmd.PersistentFlags().BoolVarP(&data.verbose, options.Verbose, options.VerboseShort, false, "Sets logging verbosity level to high")
 
 	rootCmd.AddCommand(NewBootstrapCommand(ctx, nil))
 	rootCmd.AddCommand(NewGenerateCommand(ctx, nil))
 	rootCmd.AddCommand(NewBuildCommand(ctx, nil))
 	rootCmd.AddCommand(NewBundleCommand(ctx, nil))
+	rootCmd.AddCommand(NewCiCommand(ctx))
 
 	return rootCmd
 }

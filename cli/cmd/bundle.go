@@ -76,9 +76,10 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 	}
 
 	bundleCommand := &cobra.Command{
-		Use:   "bundle",
-		Short: "Bundles an assignment with all additional files inside the assignment's directory",
-		Long:  bundleLongDescription,
+		Use:              "bundle",
+		Short:            "Bundles an assignment with all additional files inside the assignment's directory",
+		Long:             bundleLongDescription,
+		TraverseChildren: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			assignmentNo := ctx.Configuration.Status.Assignment
 			if len(args) != 0 {
@@ -167,7 +168,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 		},
 	}
 
-	addBundleFlags(bundleCommand.Flags(), data)
+	addBundleFlags(bundleCommand.PersistentFlags(), data)
 
 	return bundleCommand
 }

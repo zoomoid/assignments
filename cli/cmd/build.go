@@ -169,7 +169,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 		},
 	}
 
-	addBuildFlags(buildCmd.Flags(), data)
+	addBuildFlags(buildCmd.PersistentFlags(), data)
 
 	return buildCmd
 }

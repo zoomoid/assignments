@@ -183,7 +183,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 		},
 	}
 
-	addGenerateFlags(generateCmd.Flags(), data)
+	addGenerateFlags(generateCmd.PersistentFlags(), data)
 
 	return generateCmd
 }
