@@ -38,7 +38,7 @@ type ZipBundler struct {
 	// It is the base for the Include patterns in Configuration.Spec.BundleOptions.
 	sourceDirectory string
 	// files contains paths to all auxilliary files to be added to an archive
-	files []string
+	files []additionalFile
 }
 
 var _ Bundler = &ZipBundler{}
@@ -47,7 +47,7 @@ var _ Bundler = &ZipBundler{}
 // It returns a ZipBundler that implements the Bundler interface.
 //
 // If the archive file descriptor cannot be created, NewZipBundler returns an error.
-func NewZipBundler(ctx *context.AppContext, files []string, options *ZipBundlerOptions) (*ZipBundler, error) {
+func NewZipBundler(ctx *context.AppContext, files []additionalFile, options *ZipBundlerOptions) (*ZipBundler, error) {
 	archive, err := os.Create(filepath.Join(options.ArtifactsDirectory, options.ArchiveName))
 	if err != nil {
 		return nil, err
@@ -116,20 +116,20 @@ func (b *ZipBundler) AddAuxilliaryFiles() error {
 
 // addAuxilliaryFile opens a file descriptor for the file and
 // writes it to the zip archive file
-func (b *ZipBundler) addAuxilliaryFile(filename string) error {
+func (b *ZipBundler) addAuxilliaryFile(file additionalFile) error {
 	if b.writer == nil {
 		return errors.New("writer not created yet")
 	}
-	file, err := os.Open(filename)
+	fd, err := os.Open(file.rootPath)
 	if err != nil {
 		return err
 	}
 	// remove root-level prefix from filename to preserve assignment directory structure
-	f, err := b.writer.Create(filename)
+	f, err := b.writer.Create(file.archivePath)
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(f, file)
+	_, err = io.Copy(f, fd)
 	if err != nil {
 		return err
 	}

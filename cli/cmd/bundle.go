@@ -143,6 +143,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 					Data:     templateBindings,
 					Target:   filepath.Base(file),
 					Includes: includes,
+					Force:    data.force,
 				}
 				bundler, err := bundle.New(ctx, opts)
 				if err != nil {

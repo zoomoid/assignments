@@ -42,7 +42,7 @@ type GzipBundler struct {
 	// It is the base for the Include patterns in Configuration.Spec.BundleOptions.
 	sourceDirectory string
 	// files contains paths to all auxilliary files to be added to an archive
-	files []string
+	files []additionalFile
 }
 
 // Compile-time check for GzipBundler implmenting the Bundler interface
@@ -52,7 +52,7 @@ var _ Bundler = &GzipBundler{}
 // It returns a GzipBundler that implements the Bundler interface
 //
 // If the archive file descriptor cannot be created, NewGzipBundler returns an error.
-func NewGzipBundler(ctx *context.AppContext, files []string, options *GzipBundlerOptions) (*GzipBundler, error) {
+func NewGzipBundler(ctx *context.AppContext, files []additionalFile, options *GzipBundlerOptions) (*GzipBundler, error) {
 	archive, err := os.Create(filepath.Join(options.ArtifactsDirectory, options.ArchiveName))
 	if err != nil {
 		return nil, err
@@ -131,16 +131,16 @@ func (b *GzipBundler) AddAuxilliaryFiles() error {
 
 // addAuxilliaryFile opens a file descriptor for the file and
 // writes it to the tar archive file
-func (b *GzipBundler) addAuxilliaryFile(filename string) error {
+func (b *GzipBundler) addAuxilliaryFile(file additionalFile) error {
 	if b.tarWriter == nil {
 		return errors.New("writer not created yet")
 	}
-	file, err := os.Open(filepath.Join(b.sourceDirectory, filename))
+	fd, err := os.Open(filepath.Join(b.sourceDirectory, file.rootPath))
 	if err != nil {
 		return err
 	}
 
-	info, err := file.Stat()
+	info, err := fd.Stat()
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func (b *GzipBundler) addAuxilliaryFile(filename string) error {
 	}
 
 	// remove root-level path prefix
-	header.Name = filename
+	header.Name = file.archivePath
 
 	err = b.tarWriter.WriteHeader(header)
 	if err != nil {
@@ -159,7 +159,7 @@ func (b *GzipBundler) addAuxilliaryFile(filename string) error {
 	}
 
 	// write to the tarball, its output is automatically piped to the gzip writer
-	_, err = io.Copy(b.tarWriter, file)
+	_, err = io.Copy(b.tarWriter, fd)
 	if err != nil {
 		return err
 	}

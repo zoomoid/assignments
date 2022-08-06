@@ -38,7 +38,7 @@ type TarBundler struct {
 	// It is the base for the Include patterns in Configuration.Spec.BundleOptions.
 	sourceDirectory string
 	// files contains paths to all auxilliary files to be added to an archive
-	files []string
+	files []additionalFile
 }
 
 // Compile-time check for TarBundler implementing the Bundler interface
@@ -48,7 +48,7 @@ var _ Bundler = &TarBundler{}
 // It returns a TarBundler that implements the Bundler interface
 //
 // If the archive file descriptor cannot be created, NewTarBundler returns an error.
-func NewTarBundler(ctx *context.AppContext, files []string, options *TarBundlerOptions) (*TarBundler, error) {
+func NewTarBundler(ctx *context.AppContext, files []additionalFile, options *TarBundlerOptions) (*TarBundler, error) {
 	archive, err := os.Create(filepath.Join(options.ArtifactsDirectory, options.ArchiveName))
 	if err != nil {
 		return nil, err
@@ -124,16 +124,16 @@ func (b *TarBundler) AddAuxilliaryFiles() error {
 
 // addAuxilliaryFile opens a file descriptor for the file and
 // writes it to the tar archive file
-func (b *TarBundler) addAuxilliaryFile(filename string) error {
+func (b *TarBundler) addAuxilliaryFile(file additionalFile) error {
 	if b.writer == nil {
 		return errors.New("writer not created yet")
 	}
-	file, err := os.Open(filepath.Join(b.sourceDirectory, filename))
+	fd, err := os.Open(filepath.Join(b.sourceDirectory, file.rootPath))
 	if err != nil {
 		return err
 	}
 
-	info, err := file.Stat()
+	info, err := fd.Stat()
 	if err != nil {
 		return err
 	}
@@ -144,14 +144,14 @@ func (b *TarBundler) addAuxilliaryFile(filename string) error {
 	}
 
 	// remove root-level path prefix
-	header.Name = filename
+	header.Name = file.archivePath
 
 	err = b.writer.WriteHeader(header)
 	if err != nil {
 		return err
 	}
 
-	_, err = io.Copy(b.writer, file)
+	_, err = io.Copy(b.writer, fd)
 	if err != nil {
 		return err
 	}

@@ -74,7 +74,7 @@ type BundlerContext struct {
 	// BundlerOptions are all fields passed into the New constructor for a bundler
 	BundlerOptions
 	// files contain all the files additionally to be included
-	files []string
+	files []additionalFile
 	// sourceDirectory is the directory used for any defined additional files
 	sourceDirectory string
 	// artifactsDirectory is the ./dist/ directory from which the PDF originates
@@ -206,6 +206,11 @@ func (b *BundlerContext) makeBundler() (Bundler, error) {
 	return nil, fmt.Errorf("backend %s is not supported", b.Backend)
 }
 
+type additionalFile struct {
+	rootPath    string
+	archivePath string
+}
+
 // additionalFiles takes a slice of paths or glob patterns and a source directory,
 // and executes the glob pattern in that source directory. It returns a slice of
 // all files that matched the glob pattern and all files directly matched. If an
@@ -215,23 +220,38 @@ func (b *BundlerContext) makeBundler() (Bundler, error) {
 //
 // If executing the glob pattern fails, additionalFiles returns nil and an error containing
 // the pattern that failed to glob.
-func additionalFiles(sourceDirectory string, includes []string) ([]string, error) {
-	additionalFiles := make([]string, 0)
+// TODO: Fix this! this does not include files depending on the glob pattern
+//
+//	also differentiate between directories and files probably as we cannot write empty folders to the root of a zip file
+func additionalFiles(sourceDirectory string, includes []string) ([]additionalFile, error) {
+	additionalFiles := make([]additionalFile, 0)
 	for _, f := range includes {
 		if _, err := os.Stat(f); errors.Is(err, fs.ErrNotExist) {
 			p := filepath.Join(sourceDirectory, f)
 			matches, err := filepath.Glob(p)
 			if err == nil && len(matches) == 0 {
 				// return nil, fmt.Errorf("the path %q does not exist", pattern)
-				return []string{}, nil
+				continue
 			}
 			if err == filepath.ErrBadPattern {
 				return nil, fmt.Errorf("patterns %q is not valid: %w", f, err)
 			}
-			additionalFiles = append(additionalFiles, matches...)
+			for _, m := range matches {
+				newRoot, err := filepath.Rel(sourceDirectory, m)
+				if err != nil {
+					continue
+				}
+				additionalFiles = append(additionalFiles, additionalFile{
+					rootPath:    m,
+					archivePath: newRoot,
+				})
+			}
 			continue
 		}
-		additionalFiles = append(additionalFiles, f)
+		additionalFiles = append(additionalFiles, additionalFile{
+			rootPath:    filepath.Join(sourceDirectory, f),
+			archivePath: f, // f is a qualified path from the archive's root
+		})
 	}
 	return additionalFiles, nil
 }
