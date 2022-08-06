@@ -105,12 +105,17 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 	if err != nil {
 		return nil, err
 	}
+
+	// only set values if not overriden by the user in spec.bundleOptions.data
+	if _, ok := data["_id"]; !ok {
+		data["_id"] = id
+	}
 	data["_id"] = id
-	if _, ok := data["format"]; !ok {
-		data["format"] = format(options.Backend)
+	if _, ok := data["_format"]; !ok {
+		data["_format"] = format(options.Backend)
 	}
 
-	archiveName, err := makeArchiveName(options.Template, data, options.Backend)
+	archiveName, err := MakeArchiveName(options.Template, data)
 	if err != nil {
 		return nil, err
 	}
@@ -256,10 +261,10 @@ func additionalFiles(sourceDirectory string, includes []string) ([]additionalFil
 	return additionalFiles, nil
 }
 
-// makeArchiveName executes the template with the data given in the config file
+// MakeArchiveName executes the template with the data given in the config file
 // Returns the archive's filename when successfully executed the template, otherwise
 // returns the occurred error and an empty string
-func makeArchiveName(tpl string, data map[string]interface{}, backend BundlerBackend) (string, error) {
+func MakeArchiveName(tpl string, data map[string]interface{}) (string, error) {
 	if tpl == "" {
 		tpl = defaultArchiveNameTemplate
 	}
