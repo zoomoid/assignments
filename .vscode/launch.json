@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run generate command",
+      "name": "Run 'generate' command",
       "type": "go",
       "request": "launch",
       "mode": "auto",
@@ -14,7 +14,7 @@
       "cwd": "${workspaceFolder}/cli/hack"
     },
     {
-      "name": "Run build command",
+      "name": "Run 'build' command",
       "type": "go",
       "request": "launch",
       "mode": "auto",
@@ -23,12 +23,26 @@
       "cwd": "${workspaceFolder}/cli/hack"
     },
     {
-      "name": "Run bundle command",
+      "name": "Run 'bundle' command",
       "type": "go",
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/cli/main.go",
       "args": ["-v", "bundle", "--all", "--force"],
+      "cwd": "${workspaceFolder}/cli/hack"
+    },
+    {
+      "name": "Run 'ci release gitlab' command",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cli/main.go",
+      "args": ["-v", "ci", "release", "gitlab"],
+      "env": {
+        "CI_COMMIT_TAG": "assignment-03",
+        "CI_PROJECT_URL": "https://git.rwth-aachen.de/zoomoid/la-2022",
+        "CI_JOB_ID": "2682496"
+      },
       "cwd": "${workspaceFolder}/cli/hack"
     }
   ]
