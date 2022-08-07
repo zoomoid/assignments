@@ -13,43 +13,43 @@ import (
 
 var (
 	GitlabCIEnvFileTemplate = dedent.Dedent(`
-		ASSIGNMENT="{{.Assignment}}"
-		TAG="{{.Tag}}"
-		ARTIFACTS_ID="{{.ArtifactsId}}"
-		ARCHIVE_NAME="{{.ArchiveName}}"
-		PDF_NAME="{{.PdfName}}"
-		PDF_ASSETS='{{.PdfAssets}}'
-		ARCHIVE_ASSETS='{{.ArchiveAssets}}'
-	`)
+    ASSIGNMENT="{{.Assignment}}"
+    TAG="{{.Tag}}"
+    ARTIFACTS_ID="{{.ArtifactsId}}"
+    ARCHIVE_NAME="{{.ArchiveName}}"
+    PDF_NAME="{{.PdfName}}"
+    PDF_ASSETS='{{.PdfAssets}}'
+    ARCHIVE_ASSETS='{{.ArchiveAssets}}'
+  `)
 
 	GitlabCITemplate = dedent.Dedent(`
-	stages:
-		- build
-		- release
-	build:
-		stage: build
-		image: ghcr.io/zoomoid/assignments/cli:latest
-		script:
-			- assignmentctl build --all
-		artifacts:
-			paths:
-				- dist/
-			expire_in: 4 months
-	release:
-		stage: release
-		image: ghcr.io/zoomoid/assignments/ci/gitlab:latest
-		rules:
-			- if: $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^assignment-[0-9][0-9]+$/
-		script:
-			- assignmentctl ci release gitlab > .env
-			- source .env 
-			- release-cli create 
-				--tag-name $CI_COMMIT_TAG 
-				--name "Assignment $ASSIGNMENT"
-				--description "Release assignment $ASSIGNMENT for $CI_PROJECT_NAME from CI"
-				--assets-link $ARCHIVE_ASSETS
-				--assets-link $PDF_ASSETS
-	`)
+  stages:
+    - build
+    - release
+  build:
+    stage: build
+    image: ghcr.io/zoomoid/assignments/cli:latest
+    script:
+      - assignmentctl build --all
+    artifacts:
+      paths:
+        - dist/
+      expire_in: 4 months
+  release:
+    stage: release
+    image: ghcr.io/zoomoid/assignments/ci/gitlab:latest
+    rules:
+      - if: $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^assignment-[0-9][0-9]+$/
+    script:
+      - assignmentctl ci release gitlab > .env
+      - source .env 
+      - release-cli create 
+        --tag-name $CI_COMMIT_TAG 
+        --name "Assignment $ASSIGNMENT"
+        --description "Release assignment $ASSIGNMENT for $CI_PROJECT_NAME from CI"
+        --assets-link $ARCHIVE_ASSETS
+        --assets-link $PDF_ASSETS
+  `)
 )
 
 type Asset struct {
