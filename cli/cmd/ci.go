@@ -1,22 +1,30 @@
 package cmd
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/lithammer/dedent"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/zoomoid/assignments/v1/cmd/options"
+	"github.com/zoomoid/assignments/v1/internal/ci"
 	"github.com/zoomoid/assignments/v1/internal/context"
-	"github.com/zoomoid/assignments/v1/internal/release"
 )
 
 var (
-	ciLongDescription = dedent.Dedent(`
+	ciReleaseLongDescription = dedent.Dedent(`
 		The command is meant for usage inside CI pipelines to create release objects 
 		for Gitlab and exports several environment variables in a file that are 
 		required for the job running the release-cli.
 	`)
+)
+
+type SCMProvider string
+
+const (
+	GitlabSCM SCMProvider = "gitlab"
+	GithubSCM SCMProvider = "github"
 )
 
 func NewCiCommand(ctx *context.AppContext) *cobra.Command {
@@ -40,24 +48,19 @@ func NewCiCommand(ctx *context.AppContext) *cobra.Command {
 }
 
 func NewCiReleaseCommand(ctx *context.AppContext) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "release",
-		Short: "Create a release object for the specified git provider, either Github or Gitlab",
-	}
-
-	cmd.AddCommand(NewCiReleaseGitlabCommand(ctx))
-
-	return cmd
-}
-
-func NewCiReleaseGitlabCommand(ctx *context.AppContext) *cobra.Command {
 	file := ""
 
 	cmd := &cobra.Command{
-		Use:   "gitlab",
-		Short: "Creates an ENV file to source variables for the Gitlab release-cli from",
+		Use:   "release",
+		Short: "Creates an ENV file to source variables for the selected SCM provider",
+		Long:  ciReleaseLongDescription,
+		Args:  cobra.ExactValidArgs(1),
+		ValidArgs: []string{
+			string(GithubSCM),
+			string(GitlabSCM),
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, isStdout := release.OpenOrFallbackToStdout(file)
+			out, isStdout := ci.OpenOrFallbackToStdout(file)
 			if !isStdout {
 				defer out.Close()
 			}
@@ -72,13 +75,27 @@ func NewCiReleaseGitlabCommand(ctx *context.AppContext) *cobra.Command {
 				data = d
 			}
 
-			o, err := release.TemplateGitlabCIEnvFile(artifactsDirectory, archiveTemplate, data)
-			if err != nil {
-				return err
+			// with validators configured this can be assumed to be the only argument
+			t := SCMProvider(args[0])
+			if t == GithubSCM {
+				o, err := ci.TemplateGithubActionsEnvFile(artifactsDirectory, archiveTemplate, data)
+				if err != nil {
+					return err
+				}
+				out.Write(o.Bytes())
+				return nil
 			}
-			out.Write(o.Bytes())
 
-			return nil
+			if t == GitlabSCM {
+				o, err := ci.TemplateGitlabCIEnvFile(artifactsDirectory, archiveTemplate, data)
+				if err != nil {
+					return err
+				}
+				out.Write(o.Bytes())
+				return nil
+			}
+
+			return fmt.Errorf("%s is not a supported SCM provider", args[0])
 		},
 	}
 
@@ -88,29 +105,34 @@ func NewCiReleaseGitlabCommand(ctx *context.AppContext) *cobra.Command {
 }
 
 func NewCiBootstrapCommand(ctx *context.AppContext) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "bootstrap",
-		Short: "Creates a template CI file for the specified git provider, either Github or Gitlab",
-	}
-
-	cmd.AddCommand(NewCiBootstrapGitlabCommand(ctx))
-
-	return cmd
-}
-
-func NewCiBootstrapGitlabCommand(ctx *context.AppContext) *cobra.Command {
 	file := ""
 
 	cmd := &cobra.Command{
-		Use:   "gitlab",
-		Short: "Create a template CI file for Gitlab CI",
+		Use:   "bootstrap",
+		Short: "Create a template CI workflow file for either Github or Gitlab",
+		Args:  cobra.ExactValidArgs(1),
+		ValidArgs: []string{
+			string(GithubSCM),
+			string(GitlabSCM),
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out, isStdout := release.OpenOrFallbackToStdout(file)
+			out, isStdout := ci.OpenOrFallbackToStdout(file)
 			if !isStdout {
 				defer out.Close()
 			}
-			out.WriteString(release.GitlabCITemplate)
-			return nil
+
+			// with validators configured this can be assumed to be the only argument
+			t := SCMProvider(args[0])
+			if t == GithubSCM {
+				out.WriteString(ci.GithubActionTemplate)
+				return nil
+			}
+
+			if t == GitlabSCM {
+				out.WriteString(ci.GitlabCITemplate)
+				return nil
+			}
+			return fmt.Errorf("%s is not a supported SCM provider", args[0])
 		},
 	}
 
