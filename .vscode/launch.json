@@ -44,6 +44,18 @@
         "CI_JOB_ID": "2682496"
       },
       "cwd": "${workspaceFolder}/cli/hack"
+    },
+    {
+      "name": "Run 'ci release github' command",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cli/main.go",
+      "args": ["-v", "ci", "release", "github"],
+      "env": {
+        "GITHUB_REF_NAME": "assignment-03",
+      },
+      "cwd": "${workspaceFolder}/cli/hack"
     }
   ]
 }
