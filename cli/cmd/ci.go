@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/lithammer/dedent"
 	"github.com/rs/zerolog/log"
@@ -124,12 +125,12 @@ func NewCiBootstrapCommand(ctx *context.AppContext) *cobra.Command {
 			// with validators configured this can be assumed to be the only argument
 			t := SCMProvider(args[0])
 			if t == GithubSCM {
-				out.WriteString(ci.GithubActionTemplate)
+				out.WriteString(strings.TrimSpace(ci.GithubActionTemplate))
 				return nil
 			}
 
 			if t == GitlabSCM {
-				out.WriteString(ci.GitlabCITemplate)
+				out.WriteString(strings.TrimSpace(ci.GitlabCITemplate))
 				return nil
 			}
 			return fmt.Errorf("%s is not a supported SCM provider", args[0])
