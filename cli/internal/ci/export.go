@@ -9,7 +9,7 @@ import (
 func OpenOrFallbackToStdout(file string) (*os.File, bool) {
 	out := os.Stdout
 	if file != "" {
-		fd, err := os.Open(file)
+		fd, err := os.Create(file)
 		if err != nil {
 			log.Warn().Err(err).Msg("Falling back to stdout")
 			return out, true
