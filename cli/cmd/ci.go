@@ -17,7 +17,20 @@ var (
 	ciReleaseLongDescription = dedent.Dedent(`
 		The command is meant for usage inside CI pipelines to create release objects 
 		for Gitlab and exports several environment variables in a file that are 
-		required for the job running the release-cli.
+		required for the job running Gitlab's release-cli or Github's CLI, respectively.
+		
+		You can run this command outside of CI pipelines, note however that it is highly
+		dependant on the ENV variables being available in the runner context. You will
+		have to provide either $CI_COMMIT_TAG with $CI_JOB_ID and $CI_PROJECT_URL or 
+		$GITHUB_REF_NAME for the command to output correct .env files.
+	`)
+
+	ciBootstrapLongDescription = dedent.Dedent(`
+		Run this command to quickly template CI files for the supported SCM providers,
+		namely Gitlab and Github. Afterwards, you can customize them to your liking.
+
+		To learn more about the CI integration, see the documentation at 
+		https://github.com/zoomoid/assignments/blob/main/ci/README.md
 	`)
 )
 
@@ -39,7 +52,8 @@ func NewCiCommand(ctx *context.AppContext) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "ci",
-		Short: "Export environment variables and context to a CI job",
+		Short: "Manage CI integration for assignmentctl",
+		Long:  "The command is not meant to be run on its own",
 	}
 
 	cmd.AddCommand(NewCiReleaseCommand(ctx))
@@ -110,7 +124,8 @@ func NewCiBootstrapCommand(ctx *context.AppContext) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "bootstrap",
-		Short: "Create a template CI workflow file for either Github or Gitlab",
+		Short: "Create a template CI workflow file for the selected SCM provider",
+		Long:  ciBootstrapLongDescription,
 		Args:  cobra.ExactValidArgs(1),
 		ValidArgs: []string{
 			string(GithubSCM),
