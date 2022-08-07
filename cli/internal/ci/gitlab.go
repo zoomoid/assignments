@@ -1,20 +1,18 @@
-package release
+package ci
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/lithammer/dedent"
-	"github.com/zoomoid/assignments/v1/internal/bundle"
 )
 
 var (
-	GitlabCIEnvFileTemplates = dedent.Dedent(`
+	GitlabCIEnvFileTemplate = dedent.Dedent(`
 		ASSIGNMENT="{{.Assignment}}"
 		TAG="{{.Tag}}"
 		ARTIFACTS_ID="{{.ArtifactsId}}"
@@ -26,9 +24,7 @@ var (
 
 	GitlabCITemplate = dedent.Dedent(`
 	stages:
-		- build-utility
 		- build
-		- pre-release
 		- release
 	build:
 		stage: build
@@ -39,13 +35,11 @@ var (
 			paths:
 				- dist/
 			expire_in: 4 months
-			reports:
-				dotenv: artifacts.env
 	release:
 		stage: release
 		image: ghcr.io/zoomoid/assignments/ci/gitlab:latest
 		rules:
-			- if: $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^assignment-[0-1][0-9]$/
+			- if: $CI_COMMIT_TAG && $CI_COMMIT_TAG =~ /^assignment-[0-9][0-9]+$/
 		script:
 			- assignmentctl ci release gitlab > .env
 			- source .env 
@@ -71,42 +65,24 @@ func TemplateGitlabCIEnvFile(artifactsDirectory string, archiveNameTemplate stri
 	projectURL := os.Getenv("CI_PROJECT_URL")
 	assignment := strings.Replace(tag, "assignment-", "", 1)
 
-	ad["_id"] = assignment
-	ad["_format"] = "*" // glob the archive name later so that the actual bundle's format is irrelevant
-	archiveGlobName, err := bundle.MakeArchiveName(archiveNameTemplate, ad)
+	artifacts, err := archiveAndPdfName(assignment, artifactsDirectory, archiveNameTemplate, ad)
 	if err != nil {
 		return nil, err
 	}
 
-	absArchiveGlobName := filepath.Join(artifactsDirectory, archiveGlobName)
-
-	matches, err := filepath.Glob(absArchiveGlobName)
-	if err != nil {
-		return nil, err
-	}
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("cannot find archive in artifacts directory")
-	}
-	if len(matches) > 1 {
-		return nil, fmt.Errorf("archive name is ambiguous, can only export a single archive per tag")
-	}
-
-	archiveName := filepath.Base(matches[0])
-	pdfName := fmt.Sprintf("assignment-%s.pdf", assignment)
-
-	tmpl, err := template.New("envfile").Parse(GitlabCIEnvFileTemplates)
+	tmpl, err := template.New("envfile").Parse(strings.TrimSpace(GitlabCIEnvFileTemplate))
 	if err != nil {
 		return nil, err
 	}
 
 	archiveArtifact := Asset{
 		Name: "Submittable archive",
-		URL:  fmt.Sprintf("%s/-/%s/artifacts/file/dist/%s", projectURL, artifactsId, archiveName),
+		URL:  fmt.Sprintf("%s/-/%s/artifacts/file/dist/%s", projectURL, artifactsId, artifacts.Archive),
 	}
 
 	pdfArtifact := Asset{
 		Name: "PDF",
-		URL:  fmt.Sprintf("%s/-/%s/artifacts/file/dist/%s", projectURL, artifactsId, pdfName),
+		URL:  fmt.Sprintf("%s/-/%s/artifacts/file/dist/%s", projectURL, artifactsId, artifacts.PDF),
 	}
 
 	marshalledArchiveArtifact, err := json.Marshal(archiveArtifact)
@@ -130,8 +106,8 @@ func TemplateGitlabCIEnvFile(artifactsDirectory string, archiveNameTemplate stri
 		Assignment:    assignment,
 		Tag:           tag,
 		ArtifactsId:   artifactsId,
-		PdfName:       pdfName,
-		ArchiveName:   archiveName,
+		PdfName:       artifacts.PDF,
+		ArchiveName:   artifacts.Archive,
 		PdfAssets:     string(marshalledPDFArtifact),
 		ArchiveAssets: string(marshalledArchiveArtifact),
 	}
