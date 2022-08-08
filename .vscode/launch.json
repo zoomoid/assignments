@@ -5,6 +5,15 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run 'bootstrap' command",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cli/main.go",
+      "args": ["bootstrap", "--group", "Alpha", "--course", "Linear Algebra", "--member", "Alexander Bartolomey;123456"],
+      "cwd": "${workspaceFolder}/cli/hack"
+    },
+    {
       "name": "Run 'generate' command",
       "type": "go",
       "request": "launch",
@@ -28,8 +37,8 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/cli/main.go",
-      "args": ["-v", "bundle", "--all", "--force"],
-      "cwd": "${workspaceFolder}/cli/hack"
+      "args": ["-v", "bundle", "1", "--force"],
+      "cwd": "/git/demo-course"
     },
     {
       "name": "Run 'ci release gitlab' command",

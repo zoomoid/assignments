@@ -17,7 +17,7 @@
       "args": [
         "build",
         "-o",
-        "dist/assignmentctl",
+        "bin/assignmentctl",
         "-v"
       ]
     }
