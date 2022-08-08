@@ -5,4 +5,6 @@ const (
 	GroupName  string = "group"
 	Members    string = "members"
 	Includes   string = "includes"
+	Git        string = "git"
+	Full       string = "full"
 )
