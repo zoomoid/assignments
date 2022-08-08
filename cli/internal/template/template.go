@@ -9,11 +9,11 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/lithammer/dedent"
-	config "github.com/zoomoid/assignments/v1/internal/config"
+	"github.com/zoomoid/assignments/v1/internal/config"
 )
 
 var (
-	defaultSheetTemplate = strings.TrimPrefix(dedent.Dedent(`
+	DefaultSheetTemplate = strings.TrimPrefix(dedent.Dedent(`
 		\documentclass{csassignments}
 		{{- range $_, $input := .Includes -}}
 		\input{ {{- $input -}} }
@@ -50,7 +50,7 @@ type TemplateBinding struct {
 
 func GenerateAssignmentTemplate(tpl *string, bindings *TemplateBinding) (*bytes.Buffer, error) {
 	if tpl == nil || *tpl == "" {
-		tpl = &defaultSheetTemplate
+		tpl = &DefaultSheetTemplate
 	}
 	tmpl := template.Must(template.New("assignment").Funcs(sprig.TxtFuncMap()).Parse(*tpl))
 

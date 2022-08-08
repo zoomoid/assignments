@@ -33,7 +33,7 @@ var (
 	ErrArchiveExists error = errors.New("archive already exists")
 	// default archive template. This contains the fields _id and format, which are automatically aliased
 	// into the map that contains the data bindings, thus are ALWAYS available
-	defaultArchiveNameTemplate string = "assignment-{{._id}}.{{.format}}"
+	DefaultArchiveNameTemplate string = "assignment-{{._id}}.{{._format}}"
 )
 
 // Bundler interface all backends should implement
@@ -101,7 +101,7 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 	if data == nil {
 		data = make(map[string]interface{})
 	}
-	id, err := util.AssignmentNumberFromFilename(filepath.Base(options.Target))
+	id, err := util.AssignmentNumberFromRegex(util.AssignmentPattern, filepath.Base(options.Target))
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func additionalFiles(sourceDirectory string, includes []string) ([]additionalFil
 // returns the occurred error and an empty string
 func MakeArchiveName(tpl string, data map[string]interface{}) (string, error) {
 	if tpl == "" {
-		tpl = defaultArchiveNameTemplate
+		tpl = DefaultArchiveNameTemplate
 	}
 
 	tmpl := template.Must(template.New("bundleName").Funcs(sprig.TxtFuncMap()).Parse(tpl))
