@@ -95,3 +95,12 @@ type ConfigurationStatus struct {
 	// Assignment records the current assignment number
 	Assignment uint32 `json:"assignment" yaml:"assignment"`
 }
+
+func Minimal() *Configuration {
+	return &Configuration{
+		Spec: &ConfigurationSpec{},
+		Status: &ConfigurationStatus{
+			Assignment: 1,
+		},
+	}
+}
