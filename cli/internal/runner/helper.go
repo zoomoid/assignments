@@ -15,14 +15,26 @@ import (
 )
 
 type substitutionContext struct {
-	DOC              string
-	DOCEXT           string
-	DIR              string
-	TMPDIR           string
+	// DOC is the absolute path of the document to build without its file
+	// extension. This is required for most latex/pdflatex commands
+	DOC string
+	// DOCEXT is the same as DOC but with the file extension (i.e. ".tex")
+	// included
+	DOCEXT string
+	// DIR is the absolute path to the directory of the file to build
+	DIR string
+	// TMPDIR is the OS's temporary directory, suitable for storing any
+	// intermediate files that may be disposed of
+	TMPDIR string
+	// WORKSPACE_FOLDER is the folder that the current command runs in
 	WORKSPACE_FOLDER string
-	RELATIVE_DIR     string
-	RELATIVE_DOC     string
-	OUTDIR           string
+	// RELATIVE_DIR is the relative path to the directory of the file to build
+	RELATIVE_DIR string
+	// RELATIVE_DOC is the relative path to the document to build
+	RELATIVE_DOC string
+	// OUTDIR is the directory to which to build, and in our scenario always the
+	// same as the directory of the source file
+	OUTDIR string
 }
 
 func commandsFromRecipe(recipe *config.Recipe, cwd string, file string, quiet bool) ([]*exec.Cmd, error) {
