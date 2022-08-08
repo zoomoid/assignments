@@ -54,6 +54,8 @@ var (
 	`)
 )
 
+var Version = "0.0.0-dev.0"
+
 func Execute() {
 	// program's working directory
 	pwd, err := os.Getwd()
@@ -101,6 +103,7 @@ func NewRootCommand(opts *rootOptions) *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Example:       rootExample,
+		Version:       Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if data.verbose {
 				zerolog.SetGlobalLevel(zerolog.DebugLevel)
