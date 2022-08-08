@@ -29,19 +29,38 @@ var (
 		To build *all* assignments found in the working directory, add the
 		--all (or -a) flag.
 
-		By default, latexmk is run 3 times. You can change this by specifying
-		--runs with another number of rounds.
-
 		After compilation, the command also cleans up any intermediate files
-		created by the LaTeX compiler, using latexmk -C. If you use the build
-		command in a setup different to one-off runs, for which you might
-		want to keep the files for later runs again to save times, you
-		can use --keep to preserve those intermediate files.
+		created by the LaTeX compiler. By default, the cleanup will be done
+		directly in the file system, by using Glob patterns for a large
+		set of intermediate TeX files. You can override this behaviour in 
+		two ways:
 
-		You can suppress the output of latexmk by passing --quiet, or -q.
+		1) you can specify a different set of Glob patterns in the config at
+		.spec.build.cleanup.glob.patterns. If you'd like to run the cleanup
+		recursively, also set .spec.build.cleanup.glob.recursive to true.
+		Note that the Glob patterns are not merged with the default ones:
+		If you provide your own, these are the complete ones to cleanup
+
+		2) you can change the execution from using Globs to running commands,
+		e.g. latexmk -C: For this, set .spec.build.cleanup.command.recipe
+		accordingly
+
+		Note that .spec.build.cleanup.command and .spec.build.cleanup.glob
+		are mutually exclusive. Presence of both will cause the CLI to throw
+		an error.
+		
+		If you use the build command in a setup different to one-off runs, 
+		for which you might want to keep the files for later runs again to save 
+		times, you can use --keep to preserve those intermediate files.
+
+		You can suppress the output of spawned shell commands by passing 
+		--quiet, or -q.
 
 		To adjust the build recipe for compilation, add a recipe to your
-		configuration file at .spec.building.recipe.
+		configuration file at .spec.build.recipe. Recipes are order-preservent
+		lists of commands with arguments in YAML format. A recipe consists
+		of Tools, which must at least contain a .command string, and may
+		include arbitrary .args as a YAML list.
 	`)
 )
 
@@ -68,19 +87,20 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 		data = newBuildData()
 	}
 
-	err := ctx.Read()
-	if err != nil {
-		log.Fatal().
-			Err(err).
-			Msg("Failed to read config file")
-	}
-	defer ctx.Write()
-
 	buildCmd := &cobra.Command{
 		Use:   "build",
 		Short: "Build an assignment from source",
 		Long:  buildLongDescription,
 		Args:  cobra.MaximumNArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := ctx.Read()
+			if err != nil {
+				log.Fatal().Err(err).Msg("Failed to read config file")
+			}
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			defer ctx.Write()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			runs := []runner.RunnerOptions{}
 			assignmentNo := ctx.Configuration.Status.Assignment
@@ -123,6 +143,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 			} else {
 				targetDirectory := fmt.Sprintf("assignment-%s", util.AddLeadingZero(assignmentNo))
 				filename := "assignment.tex"
+				var err error
 				if data.file != "" {
 					targetDirectory, filename, err = targetDirectoryFromFlag(data.file)
 					if err != nil {

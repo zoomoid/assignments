@@ -38,7 +38,7 @@ var (
 		don't get too crazy. The map in .spec.bundle.data is passed down to
 		the template's execution for data binding. 
 
-		The default archive template is "assignment-{{._id}}.{{.format}}". Note 
+		The default archive template is "assignment-{{._id}}.{{._format}}". Note 
 		the _id field: this is internally augmented from the command's arguments
 		or the configuration's status field (or, in case of usage of --all, all
 		available assignments in the repository). "format" is derived from the 
@@ -69,17 +69,19 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 		data = newBundleData()
 	}
 
-	err := ctx.Read()
-	defer ctx.Write()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to read config file")
-	}
-
 	bundleCommand := &cobra.Command{
-		Use:              "bundle",
-		Short:            "Bundles an assignment with all additional files inside the assignment's directory",
-		Long:             bundleLongDescription,
-		TraverseChildren: true,
+		Use:   "bundle",
+		Short: "Bundles an assignment with all additional files inside the assignment's directory",
+		Long:  bundleLongDescription,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := ctx.Read()
+			if err != nil {
+				log.Fatal().Err(err).Msg("Failed to read config file")
+			}
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			defer ctx.Write()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			assignmentNo := ctx.Configuration.Status.Assignment
 			if len(args) != 0 {

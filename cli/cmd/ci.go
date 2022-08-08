@@ -42,18 +42,19 @@ const (
 )
 
 func NewCiCommand(ctx *context.AppContext) *cobra.Command {
-	err := ctx.Read()
-	if err != nil {
-		log.Fatal().
-			Err(err).
-			Msg("Failed to read config file")
-	}
-	defer ctx.Write()
-
 	cmd := &cobra.Command{
 		Use:   "ci",
 		Short: "Manage CI integration for assignmentctl",
 		Long:  "The command is not meant to be run on its own",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := ctx.Read()
+			if err != nil {
+				log.Fatal().Err(err).Msg("Failed to read config file")
+			}
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			defer ctx.Write()
+		},
 	}
 
 	cmd.AddCommand(NewCiReleaseCommand(ctx))

@@ -91,16 +91,20 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 		data = newGenerateData()
 	}
 
-	err := ctx.Read()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed to read config file")
-	}
-
 	generateCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Generate new assignments from the template",
 		Long:  generateLongDescription,
 		Args:  cobra.MaximumNArgs(1),
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := ctx.Read()
+			if err != nil {
+				log.Fatal().Err(err).Msg("Failed to read config file")
+			}
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			defer ctx.Write()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 0 {
 				// update configuration status
