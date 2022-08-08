@@ -1,10 +1,11 @@
 package context
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 
-	config "github.com/zoomoid/assignments/v1/internal/config"
+	"github.com/zoomoid/assignments/v1/internal/config"
 	zap "go.uber.org/zap"
 )
 
@@ -24,10 +25,20 @@ type AppContext struct {
 	// from file when ctx.Read() is called. ctx.Read() should be followed by `defer ctx.Write()`
 	// in case any mutations to the struct happen to persist those back into the file
 	Configuration *config.Configuration
+	// Verbose toggles more explicit output down the line
+	Verbose         bool
+	rootInitialized bool
 }
 
 // Read uses the context's root to read a configmap into the context's struct field
 func (c *AppContext) Read() error {
+	// TODO: we don't strictly need this anymore because only those commands that *need* config also *load* it
+	if !c.rootInitialized {
+		if err := c.mustFindConfigFile(); err != nil {
+			return err
+		}
+		c.rootInitialized = true
+	}
 	p := filepath.Join(c.Root, ".assignments.yaml")
 	cfg, err := config.Read(p)
 	if err != nil {
@@ -42,6 +53,17 @@ func (c *AppContext) Write() error {
 	p := filepath.Join(c.Root, ".assignments.yaml")
 	err := config.Write(c.Configuration, p)
 	return err
+}
+
+func (c *AppContext) mustFindConfigFile() error {
+	// if we cannot find a configuration file in here, traverse the file tree upwards
+	// until either the root or we find a config file
+	cfgPath, err := config.Find(c.Cwd)
+	if err != nil {
+		return errors.New("failed to find configmap in working directory or above. Is the directory initialized?")
+	}
+	c.Root = cfgPath
+	return nil
 }
 
 // Clone copies all fields except the logger into a fresh context and returns a reference to it
