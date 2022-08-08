@@ -44,8 +44,8 @@ func TestCleanRunner(t *testing.T) {
 				t.Error(fmt.Errorf("expected command to be of length %d, found %d", 2, len(cmd.Args)))
 			}
 			program := cmd.Args[0]
-			if program != defaultProgram {
-				t.Error(fmt.Errorf("expected program to be %s, found %s", defaultProgram, program))
+			if program != DefaultBuildProgram {
+				t.Error(fmt.Errorf("expected program to be %s, found %s", DefaultBuildProgram, program))
 			}
 			arg := cmd.Args[1]
 			if arg != "-C" {

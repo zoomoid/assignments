@@ -48,14 +48,14 @@ type Runner interface {
 }
 
 var (
-	defaultProgram        = "latexmk"
-	defaultLatexmkOptions = []string{
+	DefaultBuildProgram = "latexmk"
+	DefaultBuildArgs    = []string{
 		"-pdf",
 		"-interaction=nonstopmode",
 		"-file-line-error",
 		"-shell-escape",
-		"-outdir={{OUTDIR}}",
-		"{{DOC}}",
+		"-outdir={{.OUTDIR}}",
+		"{{.DOC}}",
 	}
 )
 

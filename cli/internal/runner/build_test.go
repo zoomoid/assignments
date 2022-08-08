@@ -111,8 +111,8 @@ func TestBuildRunner(t *testing.T) {
 			}
 
 			cmd := cmds[0]
-			if cmd.Args[0] != defaultProgram {
-				t.Error(fmt.Errorf("cmd runs %s, expected %s", cmd.Args[0], defaultProgram))
+			if cmd.Args[0] != DefaultBuildProgram {
+				t.Error(fmt.Errorf("cmd runs %s, expected %s", cmd.Args[0], DefaultBuildProgram))
 				return
 			}
 		})

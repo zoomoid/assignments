@@ -32,8 +32,8 @@ func (b *builder) MakeCommand() ([]*exec.Cmd, error) {
 		// use the default latexmk recipe
 		recipe = &config.Recipe{
 			{
-				Command: defaultProgram,
-				Args:    defaultLatexmkOptions,
+				Command: DefaultBuildProgram,
+				Args:    DefaultBuildArgs,
 			},
 		}
 	}
@@ -90,7 +90,7 @@ func (b *builder) exportArtifacts() (string, error) {
 
 	ai, err := b.assignmentNumber()
 	if err != nil {
-		return "", fmt.Errorf("failed to derive assignment number from target directory, got %s", b.ArtifactsDirectory())
+		return "", fmt.Errorf("failed to extract assignment number from target directory, got %s, %w", b.TargetDirectory(), err)
 	}
 
 	artifactsPdf := strings.Replace(b.Filename(), ".tex", ".pdf", 1)
@@ -150,5 +150,5 @@ func (b *builder) makeArtifactsDirectory() error {
 // Returns error when util.AssignmentNumberFromFilename returns an error
 func (b *builder) assignmentNumber() (string, error) {
 	s := filepath.Base(b.TargetDirectory())
-	return util.AssignmentNumberFromFilename(s)
+	return util.AssignmentNumberFromRegex(util.AssignmentDirectoryPattern, s)
 }

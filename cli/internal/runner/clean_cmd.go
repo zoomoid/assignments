@@ -15,7 +15,7 @@ type cmdCleaner struct {
 var (
 	defaultRecipe = &config.Recipe{
 		{
-			Command: defaultProgram,
+			Command: DefaultBuildProgram,
 			Args:    []string{"-C"},
 		},
 	}
