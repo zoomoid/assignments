@@ -5,7 +5,7 @@ K := $(foreach exec,$(EXECUTABLES),\
         $(if $(shell which $(exec)),some string,$(error "No $(exec) in PATH")))
 
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-
+IMAGE_BASE="ghcr.io/zoomoid/assignments"
 BINARY=assignmentctl
 VERSION?=$(shell grep 'Version' cmd/root.go | awk '{ print $$4 }' | head -n 1 | tr -d '"')
 BUILD=`git rev-parse HEAD | head -c 8`
@@ -63,4 +63,32 @@ $(WINDOWS_PLATFORMS):
 	mv $(BINARY)_$(os)_$(arch).zip ../
 	rm -rf $(BINARY)_$(os)_$(arch)
 
-.PHONY: clean release
+.PHONY: clean release build
+
+containers: ubuntu-cli-container alpine-cli-container runner-container
+
+ubuntu-cli-container:
+	docker buildx build \
+	-t $(IMAGE_BASE)/cli:$(VERSION) \
+	-t $(IMAGE_BASE)/cli:latest \
+	-t assignments/cli:latest \
+	-f build/cli/ubuntu/Dockerfile \
+	.
+
+alpine-cli-container:
+	docker buildx build \
+	-t $(IMAGE_BASE)/cli:alpine-$(VERSION) \
+	-t $(IMAGE_BASE)/cli:alpine \
+	-t assignments/cli:alpine \
+	-f build/cli/alpine/Dockerfile \
+	.
+
+runner-container: ubuntu-cli-container
+	docker buildx build \
+	-t $(IMAGE_BASE)/runner:$(VERSION) \
+	-t $(IMAGE_BASE)/runner:latest \
+	-t assignments/runner:latest \
+	-f build/runner/Dockerfile \
+	--build-arg=IMAGE=assignments/cli:latest \
+	build/runner/
+

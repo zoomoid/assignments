@@ -1,4 +1,6 @@
-FROM ubuntu:20.04
+# syntax=docker/dockerfile:1
+ARG IMAGE=ghcr.io/zoomoid/assignment/cli:latest
+FROM ${IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -28,7 +30,7 @@ RUN miktexsetup finish \
   --install biber-linux-x86_64 \
   && initexmf --admin --update-fndb
 
-COPY build/python/docker-entrypoint.sh /
+COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 ENV MIKTEX_USERCONFIG=/miktex/.miktex/texmfs/config
@@ -37,11 +39,18 @@ ENV MIKTEX_USERINSTALL=/miktex/.miktex/texmfs/install
 
 WORKDIR /miktex/work
 
-CMD ["bash"]
+RUN mkdir -p /miktex/user/texmf/tex/latex
 
-RUN apt install -y software-properties-common && \
-  add-apt-repository -y ppa:deadsnakes/ppa && \
-  apt-get install -y python3.10 python3-pip zip && \
-  pip install requests
+# add assignments.cls to the TEXMF directory
+ADD https://github.com/zoomoid/assignments/releases/latest/download/csassignments.ins /miktex/user/texmf/tex/latex/csassignments/csassignments.ins
+ADD https://github.com/zoomoid/assignments/releases/latest/download/csassignments.dtx /miktex/user/texmf/tex/latex/csassignments/csassignments.dtx
 
-RUN update-alternatives --install /usr/local/bin/python3 python3 /usr/bin/python3.10 4
+WORKDIR /miktex/user/texmf/tex/latex/csassignments
+
+RUN latex csassignments.ins
+
+WORKDIR /miktex/work
+
+RUN initexmf --register-root=/miktex/user/texmf && \
+  initexmf --update-fndb
+
