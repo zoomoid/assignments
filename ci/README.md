@@ -16,7 +16,7 @@ stages:
   - release
 build:
   stage: build
-  image: ghcr.io/zoomoid/assignments/cli:latest
+  image: ghcr.io/zoomoid/assignments/runner:latest
   script:
     - assignmentctl build --all
     - assignmentctl bundle --all
@@ -87,7 +87,7 @@ on:
 jobs:
   build:
     name: Build assignments
-    container: ghcr.io/zoomoid/assignments/cli:latest
+    container: ghcr.io/zoomoid/assignments/runner:latest
     steps:
       - uses: actions/checkout@v2
 

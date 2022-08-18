@@ -28,7 +28,7 @@ var (
     - release
   build:
     stage: build
-    image: ghcr.io/zoomoid/assignments/cli:latest
+    image: ghcr.io/zoomoid/assignments/runner:latest
     script:
       - assignmentctl build --all
     artifacts:

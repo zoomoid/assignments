@@ -30,7 +30,7 @@ var (
     jobs:
       build:
         name: Build assignments
-        container: ghcr.io/zoomoid/assignments/cli:latest
+        container: ghcr.io/zoomoid/assignments/runner:latest
         steps:
           - uses: actions/checkout@v2
 
