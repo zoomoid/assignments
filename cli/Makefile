@@ -50,18 +50,20 @@ clean:
 	rm -rf bin/
 
 $(UNIX_PLATFORMS):
-	GOOS=$(os) GOARCH=$(arch) go build -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/waveman
+	GOOS=$(os) GOARCH=$(arch) go build -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/assignmentctl
 	cd $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/
-	tar -czf $(BINARY)_$(os)_$(arch).tar.gz waveman
-	mv $(BINARY)_$(os)_$(arch).tar.gz ../
-	rm -rf $(BINARY)_$(os)_$(arch)
+	tar -czf $(BINARY)_$(VERSION)_$(os)_$(arch).tar.gz assignmentctl
+	mv $(BINARY)_$(VERSION)_$(os)_$(arch).tar.gz ../
+	cd ../
+	rm -rf $(BINARY)_$(os)_$(arch)/
 
 $(WINDOWS_PLATFORMS):
-	GOOS=$(os) GOARCH=$(arch) go build -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/waveman.exe
+	GOOS=$(os) GOARCH=$(arch) go build -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/assignmentctl.exe
 	cd $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/
-	zip $(BINARY)_$(os)_$(arch).zip waveman.exe
-	mv $(BINARY)_$(os)_$(arch).zip ../
-	rm -rf $(BINARY)_$(os)_$(arch)
+	zip $(BINARY)_$(VERSION)_$(os)_$(arch).zip assignmentctl.exe
+	mv $(BINARY)_$(VERSION)_$(os)_$(arch).zip ../
+	cd ../
+	rm -rf $(BINARY)_$(os)_$(arch)/
 
 .PHONY: clean release build
 
