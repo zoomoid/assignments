@@ -10,12 +10,14 @@ all: gitlab github
 gitlab: # build gitlab container
 	docker buildx build \
 	-t $(IMAGE_BASE)/gitlab:$(VERSION) \
+	--build-arg=BASE_IMAGE=assignments/cli:alpine \
 	-f gitlab/Dockerfile \
 	.
 
 github: # build github container
-	docker buildx build \ 
+	docker buildx build \
 	-t $(IMAGE_BASE)/github:$(VERSION) \
+	--build-arg=BASE_IMAGE=assignments/cli:alpine \
 	-f github/Dockerfile \
 	.
 

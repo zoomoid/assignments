@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1
 
-FROM ghcr.io/zoomoid/assignments/cli:alpine
+ARG BASE_IMAGE=ghcr.io/zoomoid/assignments/cli:alpine
+
+FROM ${BASE_IMAGE}
 
 RUN apk add github-cli && gh version
