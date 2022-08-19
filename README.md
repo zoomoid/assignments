@@ -9,7 +9,7 @@ working with LaTeX a little bit less painful is justified.
 
 Over the course of several semesters, I've written a lot of LaTeX code and read
 even more documentation and had my fair share of experience with building more
-and more complex things, foremost a library if LaTeX document classes and
+and more complex things, foremost a library of LaTeX document classes and
 packages for all sorts of stuff: <https://github.com/zoomoid/alphabetclasses>.
 
 Several of these macros and packages only ever experienced one iteration, and
