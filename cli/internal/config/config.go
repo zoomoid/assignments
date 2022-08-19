@@ -93,14 +93,12 @@ type GroupMember struct {
 // ConfigurationStatus contains the fields permutated by commands other than the bootstrapping
 type ConfigurationStatus struct {
 	// Assignment records the current assignment number
-	Assignment uint32 `json:"assignment" yaml:"assignment"`
+	Assignment uint32 `json:"assignment,omitempty" yaml:"assignment,omitempty"`
 }
 
 func Minimal() *Configuration {
 	return &Configuration{
-		Spec: &ConfigurationSpec{},
-		Status: &ConfigurationStatus{
-			Assignment: 1,
-		},
+		Spec:   &ConfigurationSpec{},
+		Status: &ConfigurationStatus{},
 	}
 }

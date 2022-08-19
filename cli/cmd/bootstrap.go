@@ -76,7 +76,7 @@ func newBootstrapData() *bootstrapData {
 		members: []string{},
 		full:    false,
 		git:     false,
-		cfg:     config.Minimal(),
+		cfg:     config.Minimal(), // get a clean minimal configuration struct without further initialization
 	}
 }
 
