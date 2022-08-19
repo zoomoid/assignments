@@ -68,6 +68,7 @@ func New(context *context.AppContext, options *RunnerOptions) (*RunnerContext, e
 		options:       options,
 		root:          runnerCtx.Root,
 		cwd:           runnerCtx.Cwd,
+		quiet:         options.Quiet,
 		configuration: runnerCtx.Configuration,
 	}
 

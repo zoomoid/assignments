@@ -230,6 +230,6 @@ func addBuildFlags(flags *pflag.FlagSet, data *buildData) {
 	flags.BoolVar(&data.force, options.Force, false, "Override any existing assignments with the same name")
 	flags.BoolVarP(&data.all, options.All, options.AllShort, false, "Build all assignments in assignment-*/")
 	flags.BoolVar(&data.keep, options.Keep, false, "Skip latexmk -C cleaning up all files in the source directory")
-	flags.BoolVar(&data.quiet, options.Quiet, false, "Suppress output from latexmk subprocesses")
+	flags.BoolVar(&data.quiet, options.Quiet, false, "Suppress output from subprocesses")
 	flags.StringVarP(&data.file, options.File, options.FileShort, "", "Specify a file to build, will override any derived behaviour from the repository's configmap")
 }
