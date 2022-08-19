@@ -90,8 +90,14 @@ runner-container: ubuntu-cli-container
 	docker buildx build \
 	-t $(IMAGE_BASE)/runner:$(VERSION) \
 	-t $(IMAGE_BASE)/runner:latest \
+	-t $(IMAGE_BASE):latest \
 	-t assignments/runner:latest \
+	-t assignments:latest \
 	-f build/runner/Dockerfile \
 	--build-arg=IMAGE=assignments/cli:latest \
 	build/runner/
 
+push-images: ubuntu-cli-container alpine-cli-container runner-container
+	docker push $(IMAGE_BASE)/cli --all-tags
+	docker push $(IMAGE_BASE)/runner --all-tags
+	docker push $(IMAGE_BASE):latest
