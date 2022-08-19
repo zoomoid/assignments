@@ -69,6 +69,17 @@ type BundlerOptions struct {
 	Force bool
 }
 
+func (o *BundlerOptions) CloneDataBindings() map[string]interface{} {
+	if o.Data == nil {
+		return nil
+	}
+	nm := make(map[string]interface{}, len(o.Data))
+	for k, v := range o.Data {
+		nm[k] = v
+	}
+	return nm
+}
+
 type BundlerContext struct {
 	context.AppContext
 	// BundlerOptions are all fields passed into the New constructor for a bundler
@@ -97,7 +108,7 @@ func New(ctx *context.AppContext, options *BundlerOptions) (*BundlerContext, err
 		return nil, err
 	}
 
-	data := options.Data
+	data := options.CloneDataBindings()
 	if data == nil {
 		data = make(map[string]interface{})
 	}
