@@ -179,5 +179,5 @@ func addBundleFlags(flags *pflag.FlagSet, data *bundleData) {
 	flags.BoolVarP(&data.all, options.All, options.AllShort, false, "Bundle all assignments")
 	flags.BoolVarP(&data.force, options.Force, options.ForceShort, false, "Override any existing archives with the same name")
 	flags.BoolVar(&data.tar, options.Tar, false, "Use tar as a backend for archive bundling")
-	flags.BoolVar(&data.gzip, options.Gzip, false, "Use tar and gzip as backend for archive bundling")
+	flags.BoolVar(&data.gzip, options.Gzip, false, "Use gzip to encode the archive. Requires --tar to be specified as well")
 }
