@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -106,11 +107,17 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 			defer ctx.Write()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+
+			// take the *next* assignment number
+			assignmentNo := ctx.Configuration.Status.Assignment + 1
+
+			fromArgs := false
 			if len(args) != 0 {
 				// update configuration status
 				i, err := strconv.Atoi(args[0])
 				if err == nil && !data.noIncrement {
-					ctx.Configuration.Status.Assignment = uint32(i)
+					fromArgs = true
+					assignmentNo = uint32(i)
 				}
 			}
 
@@ -133,7 +140,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 				ClassPath: classPath,
 				Course:    spec.Course,
 				Group:     spec.Group,
-				Sheet:     util.AddLeadingZero(ctx.Configuration.Status.Assignment),
+				Sheet:     util.AddLeadingZero(assignmentNo),
 				Due:       due,
 				Members:   spec.Members,
 				Includes:  spec.Includes,
@@ -176,8 +183,8 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 				return err
 			}
 
-			if !data.noIncrement {
-				ctx.Configuration.Status.Assignment += 1
+			if !data.noIncrement && !fromArgs {
+				ctx.Configuration.Status.Assignment = assignmentNo
 			}
 
 			log.Info().Msgf("Generated assignment at %s", file)
@@ -199,7 +206,10 @@ func addGenerateFlags(flags *pflag.FlagSet, data *generateData) {
 }
 
 func promptDueDate() string {
-	fmt.Print("⏱️  When is the assignment due? (e.g.,'April 20, 2021): ")
+	ts := time.Now()
+	exampleDate := fmt.Sprintf("%s %d, %d", ts.Month().String(), ts.Day(), ts.Year())
+
+	fmt.Printf("⏱️  When is the assignment due? (e.g.,'%s'): ", exampleDate)
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
