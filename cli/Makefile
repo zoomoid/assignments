@@ -42,6 +42,7 @@ install-dev:
 	CGO_ENABLED=0 go build $(LDFLAGS) -o /usr/local/bin/$(BINARY) main.go
 
 build:
+	mkdir -p ./bin
 	CGO_ENABLED=0 go build $(LDFLAGS) -o ./bin/$(BINARY) main.go
 
 release: $(UNIX_PLATFORMS) $(WINDOWS_PLATFORMS)
