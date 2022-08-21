@@ -66,7 +66,6 @@ $(WINDOWS_PLATFORMS):
 	cd ../
 	rm -rf $(BINARY)_$(os)_$(arch)/
 
-.PHONY: clean release build
 
 containers: ubuntu-cli-container alpine-cli-container runner-container
 
@@ -101,3 +100,5 @@ push-images: ubuntu-cli-container alpine-cli-container runner-container
 	docker push $(IMAGE_BASE)/cli --all-tags
 	docker push $(IMAGE_BASE)/runner --all-tags
 	docker push $(IMAGE_BASE):latest
+
+.PHONY: clean tidy fmt vet build install-dev release

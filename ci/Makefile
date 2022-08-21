@@ -3,8 +3,6 @@ IMAGE_BASE="ghcr.io/zoomoid/assignments/ci"
 BUILD_PLATFORMS?=linux/amd64
 BUILD_ARGS?=--load
 
-.PHONY: default gitlab github
-
 all: gitlab github
 
 gitlab: # build gitlab container
@@ -21,5 +19,11 @@ github: # build github container
 	-f github/Dockerfile \
 	.
 
+push: gitlab github
+	docker push $(IMAGE_BASE)/github --all-tags
+	docker push $(IMAGE_BASE)/gitlab --all-tags
+
 version:
 	@echo $(VERSION)
+
+.PHONY: default gitlab github
