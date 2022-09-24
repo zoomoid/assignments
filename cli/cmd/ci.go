@@ -88,8 +88,8 @@ func NewCiReleaseCommand(ctx *context.AppContext) *cobra.Command {
 		Long:  ciReleaseLongDescription,
 		Args:  cobra.ExactValidArgs(1),
 		ValidArgs: []string{
-			string(GithubSCM),
-			string(GitlabSCM),
+			fmt.Sprintf("%s\t%s", string(GithubSCM), "Creates a .env file to use in a release job in Github Action"),
+			fmt.Sprintf("%s\t%s", string(GitlabSCM), "Creates a .env file to use in a release job in Gitlab CI"),
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out, isStdout := ci.OpenOrFallbackToStdout(file)
@@ -146,8 +146,8 @@ func NewCiBootstrapCommand(ctx *context.AppContext) *cobra.Command {
 		Long:  ciBootstrapLongDescription,
 		Args:  cobra.ExactValidArgs(1),
 		ValidArgs: []string{
-			string(GithubSCM),
-			string(GitlabSCM),
+			fmt.Sprintf("%s\t%s", string(GithubSCM), "Creates a Github Actions YAML file"),
+			fmt.Sprintf("%s\t%s", string(GitlabSCM), "Creates a Gitlab CI .gitlab-ci.yml file"),
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out, isStdout := ci.OpenOrFallbackToStdout(file)
