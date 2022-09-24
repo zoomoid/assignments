@@ -28,6 +28,7 @@ spec:
   bundle:
     template: assignment-{{._id}}_{{.member1}}_{{.member2}}_{{.member3}}.{{._format}}
     data:
+      _id: "01"
       member1: 123456
       member2: AB123456
       member3: 69420
