@@ -55,13 +55,13 @@ template function in your custom template.
 The command creates a new directory from the current assignment number,
 as well as all directories defined in the .spec.generate.create list.
 
-```
+```text
 assignmentctl generate [flags]
 ```
 
 ### Options
 
-```
+```text
       --due string     Due date of the assignment to generate. If not provided, you'll be prompted for a due date
   -f, --force          Overrides any existing assignment source files
   -h, --help           help for generate
@@ -70,7 +70,7 @@ assignmentctl generate [flags]
 
 ### Options inherited from parent commands
 
-```
+```text
   -v, --verbose   Sets logging verbosity level to high
 ```
 

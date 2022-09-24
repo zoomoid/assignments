@@ -62,6 +62,7 @@ The same workflow is used for any subsequent assignments:
 ## Commands
 
 Commands are listed in order of their common usage pattern.
+Individual documentation is available at [./docs](./docs/assignmentctl.md)
 
 <details>
   <summary><code>assignmentctl bootstrap</code></summary>
