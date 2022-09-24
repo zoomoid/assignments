@@ -51,17 +51,17 @@ clean:
 	rm -rf bin/
 
 $(UNIX_PLATFORMS):
-	GOOS=$(os) GOARCH=$(arch) go build -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/assignmentctl
+	GOOS=$(os) GOARCH=$(arch) go build $(LDFLAGS) -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/$(BINARY)
 	cd $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/
-	tar -czf $(BINARY)_$(VERSION)_$(os)_$(arch).tar.gz assignmentctl
+	tar -czf $(BINARY)_$(VERSION)_$(os)_$(arch).tar.gz $(BINARY)
 	mv $(BINARY)_$(VERSION)_$(os)_$(arch).tar.gz ../
 	cd ../
 	rm -rf $(BINARY)_$(os)_$(arch)/
 
 $(WINDOWS_PLATFORMS):
-	GOOS=$(os) GOARCH=$(arch) go build -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/assignmentctl.exe
+	GOOS=$(os) GOARCH=$(arch) go build $(LDFLAGS) -v -o $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/$(BINARY).exe
 	cd $(ARTIFACTS_DIR)/$(BINARY)_$(os)_$(arch)/
-	zip $(BINARY)_$(VERSION)_$(os)_$(arch).zip assignmentctl.exe
+	zip $(BINARY)_$(VERSION)_$(os)_$(arch).zip $(BINARY).exe
 	mv $(BINARY)_$(VERSION)_$(os)_$(arch).zip ../
 	cd ../
 	rm -rf $(BINARY)_$(os)_$(arch)/
