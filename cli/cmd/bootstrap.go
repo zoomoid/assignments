@@ -1,3 +1,19 @@
+/*
+Copyright 2022 zoomoid.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmd
 
 import (
@@ -161,6 +177,7 @@ func NewBootstrapCommand(ctx *context.AppContext, data *bootstrapData) *cobra.Co
 	}
 
 	addBootstrapFlags(bootstrapCommand.PersistentFlags(), data)
+	addBootstrapFlagsCompletion(bootstrapCommand)
 
 	return bootstrapCommand
 }
@@ -193,6 +210,17 @@ func addBootstrapFlags(flags *pflag.FlagSet, data *bootstrapData) {
 	flags.StringSliceVar(&data.includes, options.Includes, []string{}, "Custom TeX includes for the template. Paths are relative to the REPOSITORY root, not the actual assignment source file")
 	flags.BoolVar(&data.git, options.Git, false, "Create a git repository in the current directory and commit the configuration file immediately")
 	flags.BoolVar(&data.full, options.Full, false, "Include all defaults in configuration file")
+}
+
+func addBootstrapFlagsCompletion(cmd *cobra.Command) {
+	cmd.RegisterFlagCompletionFunc(options.CourseName, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.GroupName, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Members, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Git, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Full, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Includes, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"tex"}, cobra.ShellCompDirectiveFilterFileExt
+	})
 }
 
 func promptCourseName() string {

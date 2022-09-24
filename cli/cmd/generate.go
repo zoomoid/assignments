@@ -1,3 +1,19 @@
+/*
+Copyright 2022 zoomoid.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmd
 
 import (
@@ -106,6 +122,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 		PostRun: func(cmd *cobra.Command, args []string) {
 			defer ctx.Write()
 		},
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// take the *next* assignment number
@@ -195,6 +212,7 @@ func NewGenerateCommand(ctx *context.AppContext, data *generateData) *cobra.Comm
 	}
 
 	addGenerateFlags(generateCmd.PersistentFlags(), data)
+	addGenerateFlagsCommand(generateCmd)
 
 	return generateCmd
 }
@@ -203,6 +221,12 @@ func addGenerateFlags(flags *pflag.FlagSet, data *generateData) {
 	flags.BoolVar(&data.noIncrement, options.NoIncrement, false, "Skip incrementing assignment number in configuration")
 	flags.BoolVarP(&data.force, options.Force, options.ForceShort, false, "Overrides any existing assignment source files")
 	flags.StringVar(&data.due, options.Due, "", "Due date of the assignment to generate. If not provided, you'll be prompted for a due date")
+}
+
+func addGenerateFlagsCommand(cmd *cobra.Command) {
+	cmd.RegisterFlagCompletionFunc(options.NoIncrement, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Force, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Due, cobra.NoFileCompletions)
 }
 
 func promptDueDate() string {

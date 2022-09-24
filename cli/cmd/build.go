@@ -1,3 +1,19 @@
+/*
+Copyright 2022 zoomoid.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmd
 
 import (
@@ -6,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lithammer/dedent"
@@ -82,6 +99,28 @@ func newBuildData() *buildData {
 	}
 }
 
+func getAssignmentsFromRoot(toComplete string, root string) []string {
+	globPattern := filepath.Join(root, "assignment-*")
+	matches, err := filepath.Glob(globPattern)
+
+	if err != nil {
+		return nil
+	}
+
+	ret := make([]string, len(matches))
+	for _, m := range matches {
+		num := strings.ReplaceAll(filepath.Base(m), "assignment-", "")
+
+		n, err := strconv.Atoi(num)
+		if err != nil {
+			continue
+		}
+		ret = append(ret, fmt.Sprintf("%d\tAssignment %s", n, num))
+	}
+
+	return ret
+}
+
 func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 	if data == nil {
 		data = newBuildData()
@@ -98,6 +137,12 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 				log.Fatal().Err(err).Msg("Failed to read config file")
 			}
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return getAssignmentsFromRoot(toComplete, ctx.Root), cobra.ShellCompDirectiveNoFileComp
+		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			defer ctx.Write()
 		},
@@ -106,7 +151,11 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 			assignmentNo := ctx.Configuration.Status.Assignment
 
 			if len(args) != 0 {
-				i, err := strconv.Atoi(args[0])
+				assignmentArg := args[0]
+				// attempt to remove prefix from arguments. This is relevant when using the autocompletion
+				assignmentArg = strings.TrimPrefix(assignmentArg, "assignment-")
+				// attempt parsing numerically
+				i, err := strconv.Atoi(assignmentArg)
 				if err == nil {
 					assignmentNo = uint32(i)
 				}
@@ -191,6 +240,7 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 	}
 
 	addBuildFlags(buildCmd.PersistentFlags(), data)
+	addBuildFlagsCompletion(buildCmd)
 
 	return buildCmd
 }
@@ -232,4 +282,14 @@ func addBuildFlags(flags *pflag.FlagSet, data *buildData) {
 	flags.BoolVar(&data.keep, options.Keep, false, "Skip latexmk -C cleaning up all files in the source directory")
 	flags.BoolVar(&data.quiet, options.Quiet, false, "Suppress output from subprocesses")
 	flags.StringVarP(&data.file, options.File, options.FileShort, "", "Specify a file to build, will override any derived behaviour from the repository's configmap")
+}
+
+func addBuildFlagsCompletion(cmd *cobra.Command) {
+	cmd.RegisterFlagCompletionFunc(options.Force, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.All, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Keep, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Quiet, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.File, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"tex"}, cobra.ShellCompDirectiveFilterFileExt
+	})
 }

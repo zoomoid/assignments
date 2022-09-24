@@ -1,3 +1,19 @@
+/*
+Copyright 2022 zoomoid.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmd
 
 import (
@@ -5,6 +21,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/lithammer/dedent"
 	"github.com/rs/zerolog/log"
@@ -82,10 +99,20 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 		PostRun: func(cmd *cobra.Command, args []string) {
 			defer ctx.Write()
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return getAssignmentsFromRoot(toComplete, ctx.Root), cobra.ShellCompDirectiveNoFileComp
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			assignmentNo := ctx.Configuration.Status.Assignment
 			if len(args) != 0 {
-				i, err := strconv.Atoi(args[0])
+				assignmentArg := args[0]
+				// attempt to remove prefix from arguments. This is relevant when using the autocompletion
+				assignmentArg = strings.TrimPrefix(assignmentArg, "assignment-")
+				// attempt parsing numerically
+				i, err := strconv.Atoi(assignmentArg)
 				if err == nil {
 					assignmentNo = uint32(i)
 				}
@@ -171,6 +198,7 @@ func NewBundleCommand(ctx *context.AppContext, data *bundleData) *cobra.Command 
 	}
 
 	addBundleFlags(bundleCommand.PersistentFlags(), data)
+	addBundleFlagsCompletion(bundleCommand)
 
 	return bundleCommand
 }
@@ -180,4 +208,11 @@ func addBundleFlags(flags *pflag.FlagSet, data *bundleData) {
 	flags.BoolVarP(&data.force, options.Force, options.ForceShort, false, "Override any existing archives with the same name")
 	flags.BoolVar(&data.tar, options.Tar, false, "Use tar as a backend for archive bundling")
 	flags.BoolVar(&data.gzip, options.Gzip, false, "Use gzip to encode the archive. Requires --tar to be specified as well")
+}
+
+func addBundleFlagsCompletion(cmd *cobra.Command) {
+	cmd.RegisterFlagCompletionFunc(options.All, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Force, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Tar, cobra.NoFileCompletions)
+	cmd.RegisterFlagCompletionFunc(options.Gzip, cobra.NoFileCompletions)
 }

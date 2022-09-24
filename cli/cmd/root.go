@@ -1,3 +1,19 @@
+/*
+Copyright 2022 zoomoid.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmd
 
 import (
@@ -58,35 +74,30 @@ var Version = "0.0.0-dev.0"
 
 func Execute() {
 	// program's working directory
-	pwd, err := os.Getwd()
-	if err != nil {
-		log.Fatal().Msg("Failed to determine current working directory")
-	}
 
-	rootCmd := NewRootCommand(&rootOptions{
-		root:    pwd,
-		cwd:     pwd,
-		verbose: false,
-	})
+	rootCmd := NewRootCommand()
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal().Msgf("%v", err)
 	}
 }
 
-type rootOptions struct {
+type rootData struct {
 	root    string
 	cwd     string
 	verbose bool
 }
 
-type rootData struct {
-	*rootOptions
-}
+func NewRootCommand() *cobra.Command {
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal().Msg("Failed to determine current working directory")
+	}
 
-func NewRootCommand(opts *rootOptions) *cobra.Command {
 	data := &rootData{
-		rootOptions: opts,
+		root:    pwd,
+		cwd:     pwd,
+		verbose: false,
 	}
 
 	ctx := &context.AppContext{
@@ -124,6 +135,7 @@ func NewRootCommand(opts *rootOptions) *cobra.Command {
 	rootCmd.AddCommand(NewBuildCommand(ctx, nil))
 	rootCmd.AddCommand(NewBundleCommand(ctx, nil))
 	rootCmd.AddCommand(NewCiCommand(ctx))
+	addShellCompletionSubcommand(rootCmd)
 
 	return rootCmd
 }
