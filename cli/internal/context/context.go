@@ -1,3 +1,19 @@
+/*
+Copyright 2022 zoomoid.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package context
 
 import (
@@ -6,7 +22,6 @@ import (
 	"path/filepath"
 
 	"github.com/zoomoid/assignments/v1/internal/config"
-	zap "go.uber.org/zap"
 )
 
 // AppContext is initialized by a cobra command and carried through the application
@@ -26,18 +41,13 @@ type AppContext struct {
 	// in case any mutations to the struct happen to persist those back into the file
 	Configuration *config.Configuration
 	// Verbose toggles more explicit output down the line
-	Verbose         bool
-	rootInitialized bool
+	Verbose bool
 }
 
 // Read uses the context's root to read a configmap into the context's struct field
 func (c *AppContext) Read() error {
-	// TODO: we don't strictly need this anymore because only those commands that *need* config also *load* it
-	if !c.rootInitialized {
-		if err := c.mustFindConfigFile(); err != nil {
-			return err
-		}
-		c.rootInitialized = true
+	if err := c.mustFindConfigFile(); err != nil {
+		return err
 	}
 	p := filepath.Join(c.Root, ".assignments.yaml")
 	cfg, err := config.Read(p)
@@ -62,6 +72,7 @@ func (c *AppContext) mustFindConfigFile() error {
 	if err != nil {
 		return errors.New("failed to find configmap in working directory or above. Is the directory initialized?")
 	}
+	// Mutate the root of the context to the path where the config is
 	c.Root = cfgPath
 	return nil
 }
@@ -106,20 +117,4 @@ func NewProduction() (context *AppContext, err error) {
 		Cwd:           cwd,
 		Root:          cwd,
 	}, nil
-}
-
-// newLogger creates either a new production or a new development zap logger
-func newLogger(production bool) (*zap.SugaredLogger, error) {
-	var l *zap.Logger
-	var err error
-	if production {
-		l, err = zap.NewProduction()
-	} else {
-		l, err = zap.NewDevelopment()
-	}
-	if err != nil {
-		return nil, err
-	}
-	defer l.Sync()
-	return l.Sugar(), nil
 }
