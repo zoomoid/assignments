@@ -141,7 +141,11 @@ func NewBuildCommand(ctx *context.AppContext, data *buildData) *cobra.Command {
 			if len(args) != 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
-			return getAssignmentsFromRoot(toComplete, ctx.Root), cobra.ShellCompDirectiveNoFileComp
+			comps := getAssignmentsFromRoot(toComplete, ctx.Root)
+			if len(comps) == 0 {
+				return []string{"assignments-*"}, cobra.ShellCompDirectiveFilterDirs
+			}
+			return comps, cobra.ShellCompDirectiveNoFileComp
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			defer ctx.Write()
