@@ -7,21 +7,25 @@ all: gitlab github
 
 gitlab: # build gitlab container
 	docker buildx build \
+	-t $(IMAGE_BASE)/gitlab:latest \
 	-t $(IMAGE_BASE)/gitlab:$(VERSION) \
-	--build-arg=BASE_IMAGE=assignments/cli:alpine \
+	--build-arg=BASE_IMAGE=ghcr.io/zoomoid/assignments/cli:alpine \
 	-f gitlab/Dockerfile \
 	.
 
 github: # build github container
 	docker buildx build \
-	-t $(IMAGE_BASE)/github:$(VERSION) \
-	--build-arg=BASE_IMAGE=assignments/cli:alpine \
+	-t $(IMAGE_BASE)/github:latest \
+	-t $(IMAGE_BASE)/github:$(VERSION) \	
+	--build-arg=BASE_IMAGE=ghcr.io/zoomoid/assignments/cli:alpine \
 	-f github/Dockerfile \
 	.
 
 push: gitlab github
-	docker push $(IMAGE_BASE)/github --all-tags
-	docker push $(IMAGE_BASE)/gitlab --all-tags
+	docker push $(IMAGE_BASE)/github:latest
+	docker push $(IMAGE_BASE)/github:$(VERSION)
+	docker push $(IMAGE_BASE)/gitlab:latest
+	docker push $(IMAGE_BASE)/gitlab:$(VERSION)
 
 version:
 	@echo $(VERSION)

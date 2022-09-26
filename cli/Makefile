@@ -73,7 +73,7 @@ ubuntu-cli-container:
 	docker buildx build \
 	-t $(IMAGE_BASE)/cli:$(VERSION) \
 	-t $(IMAGE_BASE)/cli:latest \
-	-t assignments/cli:latest \
+	--build-arg=VERSION=$(VERSION) \
 	-f build/cli/ubuntu/Dockerfile \
 	.
 
@@ -81,7 +81,7 @@ alpine-cli-container:
 	docker buildx build \
 	-t $(IMAGE_BASE)/cli:alpine-$(VERSION) \
 	-t $(IMAGE_BASE)/cli:alpine \
-	-t assignments/cli:alpine \
+	--build-arg=VERSION=$(VERSION) \
 	-f build/cli/alpine/Dockerfile \
 	.
 
@@ -90,15 +90,18 @@ runner-container: ubuntu-cli-container
 	-t $(IMAGE_BASE)/runner:$(VERSION) \
 	-t $(IMAGE_BASE)/runner:latest \
 	-t $(IMAGE_BASE):latest \
-	-t assignments/runner:latest \
-	-t assignments:latest \
 	-f build/runner/Dockerfile \
-	--build-arg=IMAGE=assignments/cli:latest \
+	--build-arg=VERSION=$(VERSION) \
+	--build-arg=IMAGE=ghcr.io/zoomoid/assignments/cli:latest \
 	build/runner/
 
 push-images: ubuntu-cli-container alpine-cli-container runner-container
-	docker push $(IMAGE_BASE)/cli --all-tags
-	docker push $(IMAGE_BASE)/runner --all-tags
+	docker push $(IMAGE_BASE)/cli:latest
+	docker push $(IMAGE_BASE)/cli:$(VERSION)
+	docker push $(IMAGE_BASE)/cli:alpine
+	docker push $(IMAGE_BASE)/cli:alpine-$(VERSION)
+	docker push $(IMAGE_BASE)/runner:latest
+	docker push $(IMAGE_BASE)/runner:$(VERSION)
 	docker push $(IMAGE_BASE):latest
 
 .PHONY: clean tidy fmt vet build install-dev release
