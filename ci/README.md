@@ -104,7 +104,7 @@ jobs:
 
   release:
     name: Release assignment
-    container: ghrc.io/zoomoid/assignments/ci/github:latest
+    container: ghcr.io/zoomoid/assignments/ci/github:latest
     needs: build
     if: ${{ github.event_name == 'create' && github.ref_type == 'tag'  }}
     steps:
