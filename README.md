@@ -31,6 +31,7 @@ directory:
 \documentclass{csassignments}
 
 \course{} % course will replace title in maketitle
+\sheet{} % adds a sheet identifier, automatically prefixed with "Exercise Sheet"
 \group{} % group works like a subtitle
 \member[]{} % members are like authors, but with a separation into ID, name, and surname
 \due{} % add a due date, automatically prefixed with "Handed in on"
